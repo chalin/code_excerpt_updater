@@ -1,0 +1,13 @@
+language: dart
+env:
+  global:
+    - LIBS="bin lib test"
+
+cache:
+  directories:
+    - $HOME/.pub-cache
+
+dart_task:
+ - dartanalyzer: --fatal-warnings $LIBS
+ - dartfmt: -n $LIBS
+ - test #: --platform vm # default behavior
