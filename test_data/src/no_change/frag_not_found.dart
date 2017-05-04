@@ -1,4 +1,5 @@
+/// <?code-excerpt "dne.xzy"?>
 /// ```
-/// {@source "dne.xzy"}
+/// ...
 /// ```
 var x;

@@ -1,7 +1,7 @@
 /// Test: trimming of whitespace from frag lines
+/// <?code-excerpt "frag_with_trailing_whitespace.dart"?>
 /// ```dart
-/// // {@source "frag_with_trailing_whitespace.dart"}
-/// // The const declaration line ends with: TAB SPACE
+/// // In fragment file, the const declaration line ends with: TAB SPACE
 /// // (Beware: some editors trim out trailing whitespace!)
 /// const c = 1;
 /// ```

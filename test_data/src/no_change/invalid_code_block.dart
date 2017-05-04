@@ -1,4 +1,4 @@
 /// Closing code-block token is missing below:
+/// <?code-excerpt "quote.md"?>
 /// ```
-/// {@source "quote.md"}
 var x;

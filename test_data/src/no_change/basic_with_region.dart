@@ -1,7 +1,7 @@
-/// Test: indented code, multi line
+/// Test: multi line
+/// <?code-excerpt "basic.dart" region="greeting"?>
 /// ```dart
-///   // {@source "basic.dart" region="greeting"}
-///   var greeting = 'hello';
-///   var scope = 'world';
+/// var greeting = 'hello';
+/// var scope = 'world';
 /// ```
 class C {}

@@ -1,6 +1,6 @@
-/// Test: indented code, multi line
+/// Test: non-indented code, multi line
+/// <?code-excerpt "no_region.html"?>
 /// ```html
-/// <!-- {@source "no_region.html"} -->
 /// <div>
 ///   <h1>Hello World!</h1>
 /// </div>
@@ -8,8 +8,8 @@
 var basic1;
 
 /// Test: indented code, multi line
+/// <?code-excerpt "no_region.dart" indent="  "?>
 /// ```dart
-///   // {@source "no_region.dart"}
 ///   var greeting = 'hello';
 ///   var scope = 'world';
 /// ```

@@ -1,15 +1,13 @@
-# Dart API doc source-code-fragment updater
+# Markdown code-block updater
 
-This is the repo for a simple _line-based_ **Dart API doc** updater for `{@source}` code fragment directives.
-That is, the updater processes input source files line-by-line, looking for `{@source}` 
-directives contained within public API markdown code blocks.
+This is the repo for a simple _line-based_ updater for markdown code-blocks preceded by XML
+processor instructions of the form `<?code-excerpt ...?>`. Both markdown (`.md`) and Dart
+source files are processed. For Dart source files, code blocks in API comments are updated.
 
 ## Usage
 
-Use the `code_excerpt_updater` tool to update code fragments marked with `{@source}` directives in Dart API docs.
-
 ```
-Usage: code_excerpt_updater [OPTIONS] dart_file_or_directory...
+Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
 -p, --fragment-path-prefix    Path prefix to directory containing code fragment files.
                               (Default is current working directory.)
@@ -18,40 +16,34 @@ Usage: code_excerpt_updater [OPTIONS] dart_file_or_directory...
 -i, --in-place                Update files in-place.
 ```
 
-For example, you could run the updater over [AngularDart](https://github.com/dart-lang/angular2) source as follows:
+For example, you can run the updater over 
+[AngularDart](https://github.com/dart-lang/angular2) sources as follows:
 
 `angular2> dart ../code_excerpt_updater/bin/code_excerpt_updater.dart -p doc/api/_fragments/ -i lib`
 
-## @source syntax
-
-Because this is a simple line-based processing tool, the `{@source}` directive syntax
-is strict to avoid misinterpreting occurrences of `@source` in Dart
-code (vs. public API doc comments), that are not `{@source}` code fragment directives.
-
-The updater only processes `{@source}` directives **in public API
-doc comments**; these are _expected_ to be **contained in code markdown blocks** like this:
+## `<?code-exceprt?>` syntax
 
 ```
-/// ```lang
-/// {@source "relative/path/to/fragment/file.ext" region="region-name"}
-/// ...
-/// ```
+<?code-excerpt "relative/path/to/fragment/file.ext" arg0="value0"...}
 ```
+
+Recognized arguments are:
+- `region`, optionally defining a code fragment region name.
+- `indent`, optionally defining the string to be used to indent the code in the code block.
+   By default this argument's value is the empty string.
 
 Notes:
-- The `{@source` token can optionally be preceded by an (open) comment token such as
-  `//` or `<!--`.
-- Path, and region name if given, must be enclosed in double quotes.
-- `region` is optional.
-- Whitespace is significant: for example, the opening token has no space between the
-  `{` and the `@source`.
+- The `<?code-excerpt?>` instruction can optionally be preceded by an single-line comment
+  token. Namely either `//` or `///`.
+- Path, and arguments if given, must be enclosed in double quotes.
+- The <?code-excerpt?> instruction must immediately precede a code block.
 
 ## Code fragment updating
 
-The updater does not create code fragment files, but it does expect such files to 
+The updater does not create code fragment files. It does expect such files to 
 exist and be named following the conventions described below.
 
-For a directive like `{@source "dir/file.ext" region="rname"}`, the updater will search the
+For a directive like `<?code-excerpt "dir/file.ext" region="rname"?>`, the updater will search the
 fragment folder, for a file named:
 
 - `dir/file-rname.ext.txt`<br>
@@ -60,13 +52,14 @@ fragment folder, for a file named:
    if the region is omitted
 
 If the updater can find the fragment file, it will replace the lines contained within
-the directive's markdown code block with those from the fragment file, indenting each
-fragment file line with the same indentation as the `{@source}` directive itself.
+the markdown code block with those from the fragment file, indenting each
+fragment file line as specified by the `indent` argument.
+
 For example, if `hello.dart.txt` contains the line "print('Hi');" then
 
 ```
+/// <?code-excerpt "hello.dart" indent="  "?>
 /// ```dart
-///   // {@source "hello.dart"}
 ///   print('Bonjour');
 /// ```
 ```
@@ -74,8 +67,8 @@ For example, if `hello.dart.txt` contains the line "print('Hi');" then
 will be updated to
 
 ```
+/// <?code-excerpt "hello.dart" indent="  "?>
 /// ```dart
-///   // {@source "hello.dart"}
 ///   print('Hi');
 /// ```
 ```
@@ -92,12 +85,12 @@ Consider the following API doc excerpt from the
     /// the relevant excerpts from the example's template and the corresponding
     /// component class:
     ///
+    /// <?code-excerpt "docs/template-syntax/lib/app_component.html" region="NgStyle"?>
     /// ```html
-    /// <!-- {@source "docs/template-syntax/lib/app_component.html" region="NgStyle"} -->
     /// ```
     ///
+    /// <?code-excerpt "docs/template-syntax/lib/app_component.dart" region="NgStyle"?>
     /// ```dart
-    /// // {@source "docs/template-syntax/lib/app_component.dart" region="NgStyle"}
     /// ```
 ```
 
@@ -111,8 +104,8 @@ update tool would generate:
     /// the relevant excerpts from the example's template and the corresponding
     /// component class:
     ///
+    /// <?code-excerpt "docs/template-syntax/lib/app_component.html" region="NgStyle"?>
     /// ```html
-    /// <!-- {@source "docs/template-syntax/lib/app_component.html" region="NgStyle"} -->
     /// <div>
     ///   <p [ngStyle]="setStyle()" #styleP>Change style of this text!</p>
     /// 
@@ -124,8 +117,8 @@ update tool would generate:
     /// </div>
     /// ```
     ///
+    /// <?code-excerpt "docs/template-syntax/lib/app_component.dart" region="NgStyle"?>
     /// ```dart
-    /// // {@source "docs/template-syntax/lib/app_component.dart" region="NgStyle"}
     /// bool isItalic = false;
     /// bool isBold = false;
     /// String fontSize = 'large';
