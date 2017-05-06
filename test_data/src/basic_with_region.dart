@@ -3,3 +3,15 @@
 /// ```dart
 /// ```
 void f() {}
+
+/// Test: region name in path.
+/// <?code-excerpt "basic.dart (greeting)"?>
+/// ```dart
+/// ```
+class D {}
+
+/// Test: region name in path.
+/// <?code-excerpt "basic.dart (another greeting)"?>
+/// ```dart
+/// ```
+class E {}
