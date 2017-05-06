@@ -129,7 +129,7 @@ class Updater {
       return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
     }
     _numSrcDirectives++;
-    final indentation = args['indent'] ?? '';
+    final indentation = ' ' * getIndentBy(args['indent-by']);
     final prefixedCodeExcerpt = newCodeExcerpt
         .map((line) => '$linePrefix$indentation$line'
             .replaceFirst(new RegExp(r'\s+$'), ''))
@@ -157,6 +157,21 @@ class Updater {
       args[argName] = argValue ?? '';
       // stderr.writeln('>>> arg: $argName = "${args[argName]}"');
     }
+  }
+
+  int getIndentBy(String indentByAsString) {
+    if (indentByAsString == null) return 0;
+    String errorMsg = '';
+    final result = int.parse(indentByAsString, onError: (s) {
+      errorMsg = 'error parsing integer value: $s';
+      return 0;
+    });
+    if (result < 0 || result > 100) errorMsg = 'integer out of range: $result';
+    if (errorMsg.isNotEmpty) {
+      stderr
+          .writeln('Error: $_filePath: <?code-excerpt?> indent-by: $errorMsg');
+    }
+    return result;
   }
 
   /// Side-effect: consumes code-block lines of [_lines].

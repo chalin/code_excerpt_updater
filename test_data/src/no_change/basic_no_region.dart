@@ -8,7 +8,7 @@
 var basic1;
 
 /// Test: indented code, multi line
-/// <?code-excerpt "no_region.dart" indent="  "?>
+/// <?code-excerpt "no_region.dart" indent-by="2"?>
 /// ```dart
 ///   var greeting = 'hello';
 ///   var scope = 'world';

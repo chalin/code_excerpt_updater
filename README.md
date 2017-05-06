@@ -24,19 +24,22 @@ For example, you can run the updater over
 ## `<?code-exceprt?>` syntax
 
 ```
-<?code-excerpt "relative/path/to/fragment/file.ext" arg0="value0"...}
+<?code-excerpt "relative/path/to/fragment/file.ext (opt-region)" arg0="value0"...}
 ```
 
+The first (unnamed) argument defines a path to a fragment file. The argument can optionally
+name a code fragment region; any spaces in the region name are converted to hyphens.
+
 Recognized arguments are:
-- `region`, optionally defining a code fragment region name.
-- `indent`, optionally defining the string to be used to indent the code in the code block.
-   By default this argument's value is the empty string.
+- `region`, a code fragment region name.
+- `indent-by`, define the number of spaces to be used to indent the code in the code block.
+   (Default is no indentation.)
 
 Notes:
 - The `<?code-excerpt?>` instruction can optionally be preceded by an single-line comment
   token. Namely either `//` or `///`.
 - Path, and arguments if given, must be enclosed in double quotes.
-- The <?code-excerpt?> instruction must immediately precede a code block.
+- The `<?code-excerpt?>` instruction must immediately precede a code block.
 
 ## Code fragment updating
 
@@ -53,12 +56,12 @@ fragment folder, for a file named:
 
 If the updater can find the fragment file, it will replace the lines contained within
 the markdown code block with those from the fragment file, indenting each
-fragment file line as specified by the `indent` argument.
+fragment file line as specified by the `indent-by` argument.
 
 For example, if `hello.dart.txt` contains the line "print('Hi');" then
 
 ```
-/// <?code-excerpt "hello.dart" indent="  "?>
+/// <?code-excerpt "hello.dart" indent-by="2"?>
 /// ```dart
 ///   print('Bonjour');
 /// ```
@@ -67,7 +70,7 @@ For example, if `hello.dart.txt` contains the line "print('Hi');" then
 will be updated to
 
 ```
-/// <?code-excerpt "hello.dart" indent="  "?>
+/// <?code-excerpt "hello.dart" indent-by="2"?>
 /// ```dart
 ///   print('Hi');
 /// ```

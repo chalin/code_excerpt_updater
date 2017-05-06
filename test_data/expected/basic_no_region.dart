@@ -10,7 +10,7 @@
 var basic1;
 
 /// Test: no code in code block, directive with indentation
-/// <?code-excerpt "no_region.dart" indent="  "?>
+/// <?code-excerpt "no_region.dart" indent-by="2"?>
 /// ```dart
 ///   var greeting = 'hello';
 ///   var scope = 'world';
@@ -18,7 +18,7 @@ var basic1;
 var basic2;
 
 /// Test: out-of-date code in code block, directive with indentation
-/// <?code-excerpt "no_region.dart" indent="  "?>
+/// <?code-excerpt "no_region.dart" indent-by="2"?>
 /// ```dart
 ///   var greeting = 'hello';
 ///   var scope = 'world';
