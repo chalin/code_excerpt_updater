@@ -8,6 +8,7 @@ import 'code_excerpt_updater.dart';
 import 'package:args/args.dart';
 
 const _commandName = 'code_excerpt_updater';
+final _validExt = new RegExp(r'\.(dart|md)$');
 
 /// Processes `.dart` and `.md` files, recursively traverses directories
 /// using [Updater]. See this command's help for CLI argument details.
@@ -75,10 +76,11 @@ class UpdaterCLI {
       case FileSystemEntityType.DIRECTORY:
         return _processDirectory(path);
       case FileSystemEntityType.FILE:
-        if (path.endsWith('.dart')) return _processFile(path);
+        if (_validExt.hasMatch(path)) return _processFile(path);
     }
     if (warnAboutNonDartFile) {
-      final kind = type == FileSystemEntityType.NOT_FOUND ? 'existent' : 'Dart';
+      final kind =
+          type == FileSystemEntityType.NOT_FOUND ? 'existent' : 'Dart/Markdown';
       stderr.writeln('Warning: skipping non-$kind file "$path" ($type)');
     }
   }
@@ -90,9 +92,9 @@ class UpdaterCLI {
     final entityList = dir.list(recursive: true, followLinks: false);
     await for (FileSystemEntity entity in entityList) {
       final filePath = entity.path;
-      if (!filePath.endsWith('.dart')) continue; // It could be a
-      // Not testing for entity type as it is almost certainly a file.
-      // Don't warn about non-Dart files that weren't explicitly listed on cmd line.
+      if (!_validExt.hasMatch(filePath)) continue;
+      // Not testing for entity type as it is almost certainly a file. Only warn
+      // about files with invalid extensions when explicitly listed on cmd line.
       await _processFile(filePath);
     }
   }
@@ -122,13 +124,14 @@ class UpdaterCLI {
   }
 
   void _printHelpAndExit(ArgParser parser, {int exitCode: 0}) {
-    print('Use the $_commandName tool to update code fragments '
-        'marked with @source directives in Dart API docs.\n');
+    print('Use $_commandName to update code fragments within markdown '
+        'code blocks preceded with <?code-excerpt?> directives. '
+        '(See the tool\'s GitHub repo README for details.)\n');
     _printUsageAndExit(parser, exitCode: exitCode);
   }
 
   void _printUsageAndExit(ArgParser parser, {int exitCode: 0}) {
-    print('Usage: $_commandName [OPTIONS] dart_file_or_directory...\n');
+    print('Usage: $_commandName [OPTIONS] file_or_directory...\n');
     print(parser.usage);
     exit(exitCode);
   }

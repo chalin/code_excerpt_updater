@@ -14,7 +14,7 @@ typedef void FileTestFunc(String filePath);
 // It might be easier to modify the updater to use an IOSink than to try to read stderr.
 
 void main() {
-  final apiDocUpdater = new Updater(p.join(_testDir, 'frag'));
+  final updater = new Updater(p.join(_testDir, 'frag'));
 
   String _readFile(String path) => new File(path).readAsStringSync();
 
@@ -25,10 +25,10 @@ void main() {
   String getExpected(String relPath) =>
       _readFile(p.join(_testDir, 'expected', relPath));
 
-  group('No change to API doc;', () {
+  group('No change to doc;', () {
     final _testFileNames = [
       'no_src.dart',
-      'no_comment_prefix.dart',
+      'no_comment_prefix.md',
       'basic_no_region.dart',
       'basic_with_region.dart',
       'frag_not_found.dart',
@@ -39,9 +39,9 @@ void main() {
       test(testFileName, () {
         final testFileRelativePath = p.join('no_change', testFileName);
         final originalSrc = getSrc(testFileRelativePath);
-        final updatedApiDocs = apiDocUpdater
+        final updatedDocs = updater
             .generateUpdatedFile(_srcFileName2Path(testFileRelativePath));
-        expect(updatedApiDocs, originalSrc);
+        expect(updatedDocs, originalSrc);
       });
     });
   });
@@ -50,15 +50,15 @@ void main() {
     test(testFileName, () {
       final testFileRelativePath = testFileName;
       // var originalSrc = getSrc(testFileRelativePath);
-      final updatedApiDocs = apiDocUpdater
-          .generateUpdatedFile(_srcFileName2Path(testFileRelativePath));
-      expect(updatedApiDocs, getExpected(testFileName));
+      final updatedDocs =
+          updater.generateUpdatedFile(_srcFileName2Path(testFileRelativePath));
+      expect(updatedDocs, getExpected(testFileName));
     });
   };
 
   group('Code updates;', () {
     final _testFileNames = [
-      'no_comment_prefix.dart',
+      'no_comment_prefix.md',
       'basic_no_region.dart',
       'basic_with_region.dart'
     ];
@@ -68,8 +68,8 @@ void main() {
 
   group('Handle trailing space;', () {
     test('test input file has expected trailing whitespace', () {
-      final fragPath = p.join(apiDocUpdater.fragmentPathPrefix,
-          'frag_with_trailing_whitespace.dart.txt');
+      final fragPath = p.join(
+          updater.fragmentPathPrefix, 'frag_with_trailing_whitespace.dart.txt');
       final frag = _readFile(fragPath);
       expect(frag.endsWith('\t \n\n'), isTrue);
     });

@@ -1,23 +1,23 @@
-/// Test: no code in code block, @source directive w/o indentation
+/// Test: no code in code block, directive with indentation
+/// <?code-excerpt "basic.dart" region="greeting" indent-by="2"?>
 /// ```dart
-/// // {@source "basic.dart" region="greeting"}
-/// var greeting = 'hello';
-/// var scope = 'world';
-/// ```
-var v;
-
-/// Test: no code in code block, @source directive with indentation
-/// ```dart
-///   // {@source "basic.dart" region="greeting"}
 ///   var greeting = 'hello';
 ///   var scope = 'world';
 /// ```
 void f() {}
 
-/// Test: out-of-date code in code block, @source directive with indentation
+/// Test: region name in path.
+/// <?code-excerpt "basic.dart (greeting)"?>
 /// ```dart
-///   // {@source "basic.dart" region="greeting"}
-///   var greeting = 'hello';
-///   var scope = 'world';
+/// var greeting = 'hello';
+/// var scope = 'world';
 /// ```
-class C {}
+class D {}
+
+/// Test: region name in path.
+/// <?code-excerpt "basic.dart (another greeting)"?>
+/// ```dart
+/// var greeting = 'hello';
+/// var scope = 'world';
+/// ```
+class E {}

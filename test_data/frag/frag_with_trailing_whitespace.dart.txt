@@ -1,4 +1,4 @@
-// The const declaration line ends with: TAB SPACE
+// In fragment file, the const declaration line ends with: TAB SPACE
 // (Beware: some editors trim out trailing whitespace!)
 const c = 1;	 
 
