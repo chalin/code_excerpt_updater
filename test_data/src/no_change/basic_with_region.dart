@@ -15,7 +15,7 @@ class C {}
 class D {}
 
 /// Test: region name in path.
-/// <?code-excerpt "basic.dart (another greeting)"?>
+/// <?code-excerpt "basic.dart (another()? greeting)"?>
 /// ```dart
 /// var greeting = 'hello';
 /// var scope = 'world';

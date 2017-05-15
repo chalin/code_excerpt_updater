@@ -44,7 +44,7 @@ class Updater {
 
   /// Regex matching code-excerpt processing instructions
   final RegExp procInstrRE = new RegExp(
-      r'^(\s*(///?\s*)?)?<\?code-excerpt\s+"([^"}]+)"((\s+[-\w]+="[^"}]+"\s*)*)\??>');
+      r'^(\s*(///?\s*)?)?<\?code-excerpt\s+"([^"]+)"((\s+[-\w]+="[^"]+"\s*)*)\??>');
 
   /// Regex matching @source lines
   final RegExp sourceRE = new RegExp(
@@ -162,6 +162,7 @@ class Updater {
   }
 
   final RegExp regionInPath = new RegExp(r'\s*\((.+)\)\s*$');
+  final RegExp nonWordChars = new RegExp(r'[^\w]+');
 
   void _processPathAndRegionArgs(Map<String, String> args) {
     final path = args['path'];
@@ -170,7 +171,7 @@ class Updater {
     if (match != null) {
       // Remove region spec from path
       args['path'] = path.substring(0, match.start);
-      region = match[1]?.replaceAll(' ', '-');
+      region = match[1]?.replaceAll(nonWordChars, '-');
     }
     args.putIfAbsent('region', () => region ?? '');
     // stderr.writeln('>>> path="${args['path']}", region="${args['region']}"');
