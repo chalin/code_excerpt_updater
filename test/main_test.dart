@@ -8,22 +8,39 @@ import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 const _testDir = 'test_data';
-typedef void FileTestFunc(String filePath);
 
 // TODO: enhance tests so that we can inspect the generated error messages.
 // It might be easier to modify the updater to use an IOSink than to try to read stderr.
 
+Updater updater;
+
+String _readFile(String path) => new File(path).readAsStringSync();
+
+String _srcFileName2Path(String fileName) => p.join(_testDir, 'src', fileName);
+
+String getSrc(String relPath) => _readFile(_srcFileName2Path(relPath));
+String getExpected(String relPath) =>
+    _readFile(p.join(_testDir, 'expected', relPath));
+
+void _stdFileTest(String testFileName) {
+  test(testFileName, () {
+    final testFileRelativePath = testFileName;
+    // var originalSrc = getSrc(testFileRelativePath);
+    final updatedDocs =
+        updater.generateUpdatedFile(_srcFileName2Path(testFileRelativePath));
+    expect(updatedDocs, getExpected(testFileName));
+  });
+}
+
 void main() {
-  final updater = new Updater(p.join(_testDir, 'frag'));
+  group('Basic:', testsFromDefaultDir);
+  group('Set path:', testSetPath);
+}
 
-  String _readFile(String path) => new File(path).readAsStringSync();
-
-  String _srcFileName2Path(String fileName) =>
-      p.join(_testDir, 'src', fileName);
-
-  String getSrc(String relPath) => _readFile(_srcFileName2Path(relPath));
-  String getExpected(String relPath) =>
-      _readFile(p.join(_testDir, 'expected', relPath));
+void testsFromDefaultDir() {
+  setUp(() {
+    updater = new Updater(p.join(_testDir, 'frag'));
+  });
 
   group('No change to doc;', () {
     final _testFileNames = [
@@ -46,16 +63,6 @@ void main() {
     });
   });
 
-  final FileTestFunc _stdFileTest = (testFileName) {
-    test(testFileName, () {
-      final testFileRelativePath = testFileName;
-      // var originalSrc = getSrc(testFileRelativePath);
-      final updatedDocs =
-          updater.generateUpdatedFile(_srcFileName2Path(testFileRelativePath));
-      expect(updatedDocs, getExpected(testFileName));
-    });
-  };
-
   group('Code updates;', () {
     final _testFileNames = [
       'no_comment_prefix.md',
@@ -76,4 +83,12 @@ void main() {
 
     _stdFileTest('trim.dart');
   });
+}
+
+void testSetPath() {
+  setUp(() {
+    updater = new Updater(p.join(_testDir, ''));
+  });
+
+  _stdFileTest('set_path.md');
 }
