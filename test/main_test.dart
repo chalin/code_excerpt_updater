@@ -34,11 +34,15 @@ final _errMsgs = {
       "(OS Error: No such file or directory, errno = 2)",
   'no_change/invalid_code_block.dart':
       'Error: test_data/src/no_change/invalid_code_block.dart: '
-      'unterminated markdown code block for <?code-excerpt "quote.md"?>'
+      'unterminated markdown code block for <?code-excerpt "quote.md"?>',
+  'no_change/missing_code_block.dart':
+      'Error: test_data/src/no_change/missing_code_block.dart: '
+      'code block should immediately follow <?code-excerpt?> - "quote.md"\n'
+      '  not: int x = 0;',
 };
 
 void _stdFileTest(String testFilePath) {
-  print('>> testing $testFilePath');
+  // print('>> testing $testFilePath');
   final testFileName = p.basename(testFilePath);
   test(testFileName, () {
     final testFileRelativePath = testFilePath;
@@ -82,7 +86,8 @@ void testsFromDefaultDir() {
       'basic_no_region.dart',
       'basic_with_region.dart',
       'frag_not_found.dart',
-      'invalid_code_block.dart'
+      'invalid_code_block.dart',
+      'missing_code_block.dart',
     ].map((fn) => p.join('no_change', fn));
 
     _testFileNames.forEach(_stdFileTest);

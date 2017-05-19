@@ -40,7 +40,7 @@ class Updater {
   int get numUpdatedFrag => _numUpdatedFrag;
 
   /// Returns the content of the file at [path] with code blocks updated.
-  /// Missing fragment files are reported via [err].
+  /// Missing fragment files are reported via `err`.
   /// If [path] cannot be read then an exception is thrown.
   String generateUpdatedFile(String path) {
     _filePath = path == null || path.isEmpty ? 'unnamed-file' : path;
@@ -69,32 +69,33 @@ class Updater {
       // Deprecated support for old @source syntax
       var match = sourceRE.firstMatch(line);
       if (match != null) {
-        output.addAll(_getUpdatedCodeBlock(match));
+        output.addAll(_getUpdatedAtSourceCodeBlock(match));
         continue;
       }
       if (!line.contains('<?code-excerpt')) continue;
       match = procInstrRE.firstMatch(line);
-      if (match == null || match[3] == null) continue;
-      output.addAll(_getUpdatedCodeBlock2(match));
+      if (match == null) {
+        _reportError('invalid processing instruction: $line');
+        continue;
+      }
+      final info = _extractAndNormalizeArgs(match);
+
+      if (match[3] == null) {
+        // _processSetPath();
+      } else {
+        output.addAll(_getUpdatedCodeBlock(info));
+      }
     }
     return output.join(_eol);
   }
 
+  void _processSetPath(Match procInstrMatch) {}
+
   /// Expects the next lines to be a markdown code block.
   /// Side-effect: consumes code-block lines.
-  Iterable<String> _getUpdatedCodeBlock2(Match procInstrMatch) {
-    _log.finer(
-        '>>> pIMatch: ${procInstrMatch.groupCount} - [${procInstrMatch[0]}]');
-    var i = 1;
-    final linePrefix = procInstrMatch[i++] ?? '';
-    i++; // final commentToken = match[i++];
-    i++; // optional path+region
-    final pathAndOptRegion = procInstrMatch[i++];
-    final args = {'path': pathAndOptRegion};
-    _extractAndNormalizeArgs(args, procInstrMatch[i]);
-    final pathToCodeExcerpt = args['path'];
-    final region = args['region'];
-    _log.finest('>>> arg: region = "${region}"');
+  Iterable<String> _getUpdatedCodeBlock(InstrInfo info) {
+    final args = info.args;
+    final pathToCodeExcerpt = info.path;
 
     // TODO: only match on same prefix.
     final codeBlockMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
@@ -113,7 +114,7 @@ class Updater {
       return <String>[openingCodeBlockLine];
     }
 
-    final newCodeExcerpt = _getExcerpt(pathToCodeExcerpt, region);
+    final newCodeExcerpt = _getExcerpt(pathToCodeExcerpt, info.region);
     _log.finer('>>> got new excerpt: $newCodeExcerpt');
     if (newCodeExcerpt == null) {
       // Error has been reported. Return while leaving existing code.
@@ -146,6 +147,7 @@ class Updater {
       return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
     }
     _numSrcDirectives++;
+    final linePrefix = info.linePrefix;
     final indentation = ' ' * getIndentBy(args['indent-by']);
     final prefixedCodeExcerpt = newCodeExcerpt
         .map((line) => '$linePrefix$indentation$line'
@@ -159,7 +161,21 @@ class Updater {
     return result;
   }
 
-  void _extractAndNormalizeArgs(Map<String, String> args, String argsAsString) {
+  InstrInfo _extractAndNormalizeArgs(Match procInstrMatch) {
+    _log.finer(
+        '>>> pIMatch: ${procInstrMatch.groupCount} - [${procInstrMatch[0]}]');
+    final info = new InstrInfo();
+    var i = 1;
+    info.linePrefix = procInstrMatch[i++] ?? '';
+    i++; // final commentToken = match[i++];
+    i++; // optional path+region
+    final pathAndOptRegion = procInstrMatch[i++];
+    info.unnamedArg = pathAndOptRegion;
+    __extractAndNormalizeNamedArgs(info, procInstrMatch[i]);
+    return info;
+  }
+
+  void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
 
     final RegExp procInstrArgRE = new RegExp(r'(\s*([-\w]+)=")([^"}]+)"\s*');
@@ -171,26 +187,27 @@ class Updater {
       final argName = match[2];
       final argValue = match[3];
       if (argName == null) continue;
-      args[argName] = argValue ?? '';
-      _log.finest('>>> arg: $argName = "${args[argName]}"');
+      info.args[argName] = argValue ?? '';
+      _log.finest('>>> arg: $argName = "${info.args[argName]}"');
     }
-    _processPathAndRegionArgs(args);
+    _processPathAndRegionArgs(info);
   }
 
   final RegExp regionInPath = new RegExp(r'\s*\((.+)\)\s*$');
   final RegExp nonWordChars = new RegExp(r'[^\w]+');
 
-  void _processPathAndRegionArgs(Map<String, String> args) {
-    final path = args['path'];
+  void _processPathAndRegionArgs(InstrInfo info) {
+    final path = info.unnamedArg;
     final match = regionInPath.firstMatch(path);
-    String region;
-    if (match != null) {
+    if (match == null) {
+      info.path = path;
+    } else {
       // Remove region spec from path
-      args['path'] = path.substring(0, match.start);
-      region = match[1]?.replaceAll(nonWordChars, '-');
+      info.path = path.substring(0, match.start);
+      info.region = match[1]?.replaceAll(nonWordChars, '-');
     }
-    args.putIfAbsent('region', () => region ?? '');
-    _log.finer('>>> path="${args['path']}", region="${args['region']}"');
+    _log.finer(
+        '>>> path="${info.path}", region="${info.region}"');
   }
 
   int getIndentBy(String indentByAsString) {
@@ -207,8 +224,10 @@ class Updater {
     return result;
   }
 
+  @deprecated
+
   /// Side-effect: consumes code-block lines of [_lines].
-  Iterable<String> _getUpdatedCodeBlock(Match match) {
+  Iterable<String> _getUpdatedAtSourceCodeBlock(Match match) {
     var i = 1;
     final linePrefix = match[i++];
     i++; // final commentTokenWithSapce = match[i++];
@@ -274,4 +293,25 @@ class Updater {
   }
 
   void _reportError(String msg) => _stderr.writeln('Error: $_filePath: $msg');
+}
+
+class InstrInfo {
+  String linePrefix = '';
+
+  /// Optional. Currently represents a path + optional region
+  String unnamedArg;
+
+  String _path;
+  String get path => _path ?? args['path'] ?? '';
+  set path(String p) {
+    _path = p;
+  }
+
+  String _region;
+  set region(String r) {
+    _region = r;
+  }
+  String get region => _region ?? args['region'] ?? '';
+
+  final Map<String, String> args = {};
 }

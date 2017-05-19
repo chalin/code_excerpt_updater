@@ -5,7 +5,7 @@
 ///   <h1>Hello World!</h1>
 /// </div>
 /// ```
-var basic1;
+Null basic1;
 
 /// Test: indented code, multi line
 /// <?code-excerpt "no_region.dart" indent-by="2"?>
