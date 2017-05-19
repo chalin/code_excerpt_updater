@@ -28,8 +28,8 @@ class Updater {
 
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
-  /// [es] defaults to [_stderr].
-  Updater(this.fragmentDirPath, {Stdout es}) : _stderr = es ?? stderr {
+  /// [err] defaults to [_stderr].
+  Updater(this.fragmentDirPath, {Stdout err}) : _stderr = err ?? stderr {
     // Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((LogRecord rec) {
       print('${rec.level.name}: ${rec.time}: ${rec.message}');
@@ -40,7 +40,7 @@ class Updater {
   int get numUpdatedFrag => _numUpdatedFrag;
 
   /// Returns the content of the file at [path] with code blocks updated.
-  /// Missing fragment files are reported via [es].
+  /// Missing fragment files are reported via [err].
   /// If [path] cannot be read then an exception is thrown.
   String generateUpdatedFile(String path) {
     _filePath = path == null || path.isEmpty ? 'unnamed-file' : path;
@@ -83,7 +83,8 @@ class Updater {
   /// Expects the next lines to be a markdown code block.
   /// Side-effect: consumes code-block lines.
   Iterable<String> _getUpdatedCodeBlock2(Match procInstrMatch) {
-    _log.finer('>>> pIMatch: ${procInstrMatch.groupCount} - [${procInstrMatch[0]}]');
+    _log.finer(
+        '>>> pIMatch: ${procInstrMatch.groupCount} - [${procInstrMatch[0]}]');
     var i = 1;
     final linePrefix = procInstrMatch[i++] ?? '';
     i++; // final commentToken = match[i++];
@@ -140,6 +141,8 @@ class Updater {
       _lines.removeAt(0);
     }
     if (closingCodeBlockLine == null) {
+      _reportError('unterminated markdown code block '
+          'for <?code-excerpt "$pathToCodeExcerpt"?>');
       return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
     }
     _numSrcDirectives++;
