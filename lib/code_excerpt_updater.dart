@@ -80,8 +80,8 @@ class Updater {
       }
       final info = _extractAndNormalizeArgs(match);
 
-      if (match[3] == null) {
-        // _processSetPath();
+      if (info.unnamedArg == null) {
+        _processSetPath(info);
       } else {
         output.addAll(_getUpdatedCodeBlock(info));
       }
@@ -89,7 +89,14 @@ class Updater {
     return output.join(_eol);
   }
 
-  void _processSetPath(Match procInstrMatch) {}
+  void _processSetPath(InstrInfo info) {
+    _fragmentSubdir = info.args['path-base'];
+    if (_fragmentSubdir == null) {
+      _reportError('invalid instruction: expecting "path-base" argument');
+    } else if (info.args.keys.length > 1) {
+      _reportError('extra arguments provided along with "path-base"');
+    }
+  }
 
   /// Expects the next lines to be a markdown code block.
   /// Side-effect: consumes code-block lines.
@@ -198,6 +205,7 @@ class Updater {
 
   void _processPathAndRegionArgs(InstrInfo info) {
     final path = info.unnamedArg;
+    if (path == null) return;
     final match = regionInPath.firstMatch(path);
     if (match == null) {
       info.path = path;

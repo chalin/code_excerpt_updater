@@ -39,6 +39,8 @@ final _errMsgs = {
       'Error: test_data/src/no_change/missing_code_block.dart: '
       'code block should immediately follow <?code-excerpt?> - "quote.md"\n'
       '  not: int x = 0;',
+  'no_change/no_src.dart': 'Error: test_data/src/no_change/no_src.dart: '
+      'invalid instruction: expecting "path-base" argument',
 };
 
 void _stdFileTest(String testFilePath) {
@@ -68,7 +70,7 @@ class MockStderr extends Mock implements Stdout {}
 
 void main() {
   group('Basic:', testsFromDefaultDir);
-  // group('Set path:', testSetPath);
+  group('Set path:', testSetPath);
 }
 
 void testsFromDefaultDir() {
