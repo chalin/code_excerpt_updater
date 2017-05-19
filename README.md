@@ -19,27 +19,39 @@ Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 For example, you can run the updater over 
 [AngularDart](https://github.com/dart-lang/angular2) sources as follows:
 
-`angular2> dart ../code_excerpt_updater/bin/code_excerpt_updater.dart -p doc/api/_fragments/ -i lib`
+`angular2> dart ../code_excerpt_updater/bin/code_excerpt_updater.dart -p ../site-webdev/tmp/_fragments/_api -i lib`
 
 ## `<?code-exceprt?>` syntax
 
-```
-<?code-excerpt "relative/path/to/fragment/file.ext (opt-region)" arg0="value0"...}
-```
+The instruction comes in two forms. The first (and most common) form must immediately precede a markdown code block:
+
+
+    <?code-excerpt "path/file.ext (optional-region-name)" arg0="value0" ...?>
+    ```
+      ...
+    ```
 
 The first (unnamed) argument defines a path to a fragment file. The argument can optionally
-name a code fragment region; any spaces in the region name are converted to hyphens.
+name a code fragment region&mdash;any non-word character sequences (`\w+`) in the region name are converted to a hyphen.
 
 Recognized arguments are:
 - `region`, a code fragment region name.
 - `indent-by`, define the number of spaces to be used to indent the code in the code block.
    (Default is no indentation.)
+- `path-base`, when provided, must be the only argument. Its use is described below in the second instruction form.
 
 Notes:
 - The `<?code-excerpt?>` instruction can optionally be preceded by an single-line comment
   token. Namely either `//` or `///`.
 - Path, and arguments if given, must be enclosed in double quotes.
-- The `<?code-excerpt?>` instruction must immediately precede a code block.
+
+The second form of the instruction is:
+
+```
+<?code-excerpt path-base="subdirPath"?>
+```
+
+Following this instruction, the paths to file fragments will be interpreted relative to the `path-base` argument.
 
 ## Code fragment updating
 
