@@ -92,7 +92,7 @@ class Updater {
   void _processSetPath(InstrInfo info) {
     _fragmentSubdir = info.args['path-base'];
     if (_fragmentSubdir == null) {
-      // Ignore. Maybe report these if we eventually support a verbose mode.
+      _warn('instruction ignored: ${info.instruction}');
     } else if (info.args.keys.length > 1) {
       _reportError(
           '"path-base" should be the only argument in the instruction');
@@ -133,7 +133,6 @@ class Updater {
     String closingCodeBlockLine;
     while (_lines.isNotEmpty) {
       line = _lines[0];
-      _log.finest('>>> looking for closing got line: $line');
       final match = codeBlockMarker.firstMatch(line);
       if (match == null) {
         // TODO: it would be nice if we could print a line number too.
@@ -170,9 +169,9 @@ class Updater {
   }
 
   InstrInfo _extractAndNormalizeArgs(Match procInstrMatch) {
+    final info = new InstrInfo(procInstrMatch[0]);
     _log.finer(
-        '>>> pIMatch: ${procInstrMatch.groupCount} - [${procInstrMatch[0]}]');
-    final info = new InstrInfo();
+        '>>> pIMatch: ${procInstrMatch.groupCount} - [${info.instruction}]');
     var i = 1;
     info.linePrefix = procInstrMatch[i++] ?? '';
     i++; // final commentToken = match[i++];
@@ -188,15 +187,15 @@ class Updater {
 
     final RegExp procInstrArgRE = new RegExp(r'(\s*([-\w]+)=")([^"}]+)"\s*');
     final matches = procInstrArgRE.allMatches(argsAsString);
-    _log.finest('>>> arg ${matches.length} from $argsAsString');
+    _log.finer('>>> arg ${matches.length} from $argsAsString');
 
     for (final match in matches) {
-      _log.finest('>>> arg: "${match[0]}"');
+      _log.finer('>>> arg: "${match[0]}"');
       final argName = match[2];
       final argValue = match[3];
       if (argName == null) continue;
       info.args[argName] = argValue ?? '';
-      _log.finest('>>> arg: $argName = "${info.args[argName]}"');
+      _log.finer('>>> arg: $argName = "${info.args[argName]}"');
     }
     _processPathAndRegionArgs(info);
   }
@@ -300,11 +299,15 @@ class Updater {
     }
   }
 
+  _warn(String msg) => _stderr.writeln('Warning: $_filePath: $msg');
   void _reportError(String msg) => _stderr.writeln('Error: $_filePath: $msg');
 }
 
 class InstrInfo {
+  final String instruction;
   String linePrefix = '';
+
+  InstrInfo(this.instruction);
 
   /// Optional. Currently represents a path + optional region
   String unnamedArg;

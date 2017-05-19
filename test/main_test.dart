@@ -39,6 +39,9 @@ final _errMsgs = {
       'Error: test_data/src/no_change/missing_code_block.dart: '
       'code block should immediately follow <?code-excerpt?> - "quote.md"\n'
       '  not: int x = 0;',
+  'no_change/no_path.md':
+      'Warning: test_data/src/no_change/no_path.md: instruction ignored: <?code-excerpt title="abc"?>;'
+      'Warning: test_data/src/no_change/no_path.md: instruction ignored: <?code-excerpt ?>',
 };
 
 void _stdFileTest(String testFilePath) {
@@ -49,18 +52,19 @@ void _stdFileTest(String testFilePath) {
     // var originalSrc = getSrc(testFileRelativePath);
     final updatedDocs =
         updater.generateUpdatedFile(_srcFileName2Path(testFileRelativePath));
-    final expectedDoc = new File(_expectedFn2Path(testFilePath)).existsSync()
-        ? getExpected(testFilePath)
-        : getSrc(testFilePath);
-    expect(updatedDocs, expectedDoc);
 
     final expectedErr = _errMsgs[testFilePath];
     if (expectedErr == null) {
       verifyZeroInteractions(_stderr);
     } else {
       final vr = verify(_stderr.writeln(captureAny));
-      expect(vr.captured.single, expectedErr);
+      expect(vr.captured.join(';'), expectedErr);
     }
+
+    final expectedDoc = new File(_expectedFn2Path(testFilePath)).existsSync()
+        ? getExpected(testFilePath)
+        : getSrc(testFilePath);
+    expect(updatedDocs, expectedDoc);
   });
 }
 
@@ -98,7 +102,8 @@ void testsFromDefaultDir() {
     final _testFileNames = [
       'no_comment_prefix.md',
       'basic_no_region.dart',
-      'basic_with_region.dart'
+      'basic_with_region.dart',
+      'basic_with_region.jade',
     ];
 
     _testFileNames.forEach(_stdFileTest);
