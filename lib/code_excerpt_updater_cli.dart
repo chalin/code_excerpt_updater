@@ -8,7 +8,7 @@ import 'code_excerpt_updater.dart';
 import 'package:args/args.dart';
 
 const _commandName = 'code_excerpt_updater';
-final _validExt = new RegExp(r'\.(dart|md)$');
+final _validExt = new RegExp(r'\.(dart|jade|md)$');
 
 /// Processes `.dart` and `.md` files, recursively traverses directories
 /// using [Updater]. See this command's help for CLI argument details.
