@@ -92,9 +92,10 @@ class Updater {
   void _processSetPath(InstrInfo info) {
     _fragmentSubdir = info.args['path-base'];
     if (_fragmentSubdir == null) {
-      _reportError('invalid instruction: expecting "path-base" argument');
+      // Ignore. Maybe report these if we eventually support a verbose mode.
     } else if (info.args.keys.length > 1) {
-      _reportError('extra arguments provided along with "path-base"');
+      _reportError(
+          '"path-base" should be the only argument in the instruction');
     }
   }
 
@@ -214,8 +215,7 @@ class Updater {
       info.path = path.substring(0, match.start);
       info.region = match[1]?.replaceAll(nonWordChars, '-');
     }
-    _log.finer(
-        '>>> path="${info.path}", region="${info.region}"');
+    _log.finer('>>> path="${info.path}", region="${info.region}"');
   }
 
   int getIndentBy(String indentByAsString) {
@@ -319,6 +319,7 @@ class InstrInfo {
   set region(String r) {
     _region = r;
   }
+
   String get region => _region ?? args['region'] ?? '';
 
   final Map<String, String> args = {};

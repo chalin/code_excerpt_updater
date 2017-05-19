@@ -39,8 +39,6 @@ final _errMsgs = {
       'Error: test_data/src/no_change/missing_code_block.dart: '
       'code block should immediately follow <?code-excerpt?> - "quote.md"\n'
       '  not: int x = 0;',
-  'no_change/no_src.dart': 'Error: test_data/src/no_change/no_src.dart: '
-      'invalid instruction: expecting "path-base" argument',
 };
 
 void _stdFileTest(String testFilePath) {
@@ -83,13 +81,14 @@ void testsFromDefaultDir() {
     setUp(() => clearInteractions(_stderr));
 
     final _testFileNames = [
-      'no_src.dart',
-      'no_comment_prefix.md',
       'basic_no_region.dart',
       'basic_with_region.dart',
       'frag_not_found.dart',
       'invalid_code_block.dart',
       'missing_code_block.dart',
+      'no_comment_prefix.md',
+      'no_path.md',
+      'no_src.dart',
     ].map((fn) => p.join('no_change', fn));
 
     _testFileNames.forEach(_stdFileTest);
