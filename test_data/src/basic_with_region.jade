@@ -1,6 +1,17 @@
 :marked
-  Test: no code in code block, directive with indentation
+  Test:
+  - Jade file
+  - Global indentation setting
+  - Valueless instruction argument (`title`).
+
+  <?code-excerpt "basic.dart (greeting)" title>
+  ```dart
+  ```
 
   <?code-excerpt "basic.dart (greeting)" title indent-by="2"?>
-  ```dart
+  ```
+  ```
+
+  <?code-excerpt "basic.dart (greeting)" indent-by="0"?>
+  ```
   ```
