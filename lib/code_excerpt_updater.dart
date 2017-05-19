@@ -55,7 +55,7 @@ class Updater {
 
   /// Regex matching code-excerpt processing instructions
   final RegExp procInstrRE = new RegExp(
-      r'^(\s*(///?\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+="[^"]+"\s*)*)\??>');
+      r'^(\s*(///?\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+(\s*=\s*"[^"]+")?\s*)*)\??>');
 
   /// Regex matching @source lines
   final RegExp sourceRE = new RegExp(
@@ -299,7 +299,7 @@ class Updater {
     }
   }
 
-  _warn(String msg) => _stderr.writeln('Warning: $_filePath: $msg');
+  void _warn(String msg) => _stderr.writeln('Warning: $_filePath: $msg');
   void _reportError(String msg) => _stderr.writeln('Error: $_filePath: $msg');
 }
 
