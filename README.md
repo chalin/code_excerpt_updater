@@ -13,13 +13,14 @@ Usage: code_excerpt_updater [OPTIONS] file_or_directory...
                            (Default is current working directory.)
 
 -h, --help                 Show command help.
--i, --in-place             Update files in-place.
+-i, --indentation          Default code indentation to be used for code inside code blocks.
+-w, --write-in-place             Write updates to files in-place.
 ```
 
 For example, you can run the updater over 
 [AngularDart](https://github.com/dart-lang/angular2) sources as follows:
 
-`angular2> dart ../code_excerpt_updater/bin/code_excerpt_updater.dart -p ../site-webdev/tmp/_fragments/_api -i lib`
+`angular2> dart ../code_excerpt_updater/bin/code_excerpt_updater.dart -p ../site-webdev/tmp/_fragments/_api -w lib`
 
 ## `<?code-exceprt?>` syntax
 

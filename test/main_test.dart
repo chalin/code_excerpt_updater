@@ -73,6 +73,7 @@ class MockStderr extends Mock implements Stdout {}
 void main() {
   group('Basic:', testsFromDefaultDir);
   group('Set path:', testSetPath);
+  group('Default indentation:', testDefaultIndentation);
 }
 
 void testsFromDefaultDir() {
@@ -103,7 +104,6 @@ void testsFromDefaultDir() {
       'no_comment_prefix.md',
       'basic_no_region.dart',
       'basic_with_region.dart',
-      'basic_with_region.jade',
     ];
 
     _testFileNames.forEach(_stdFileTest);
@@ -123,8 +123,17 @@ void testsFromDefaultDir() {
 
 void testSetPath() {
   setUp(() {
-    updater = new Updater(p.join(_testDir, ''));
+    updater = new Updater(p.join(_testDir, ''), err: _stderr);
   });
 
   _stdFileTest('set_path.md');
+}
+
+void testDefaultIndentation() {
+  setUp(() {
+    updater = new Updater(p.join(_testDir, 'frag'),
+        defaultIndentation: 2, err: _stderr);
+  });
+
+  _stdFileTest('basic_with_region.jade');
 }

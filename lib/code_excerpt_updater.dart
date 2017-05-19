@@ -21,6 +21,8 @@ class Updater {
   final Logger _log = new Logger('CEU');
   final Stdout _stderr;
   final String fragmentDirPath;
+  final int defaultIndentation;
+
   String _fragmentSubdir = ''; // init from <?code-excerpt path-base="..."?>
 
   String _filePath = '';
@@ -29,7 +31,8 @@ class Updater {
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
   /// [err] defaults to [_stderr].
-  Updater(this.fragmentDirPath, {Stdout err}) : _stderr = err ?? stderr {
+  Updater(this.fragmentDirPath, {this.defaultIndentation = 0, Stdout err})
+      : _stderr = err ?? stderr {
     // Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((LogRecord rec) {
       print('${rec.level.name}: ${rec.time}: ${rec.message}');
@@ -90,8 +93,8 @@ class Updater {
   }
 
   void _processSetPath(InstrInfo info) {
-    _fragmentSubdir = info.args['path-base'];
-    if (_fragmentSubdir == null) {
+    _fragmentSubdir = info.args['path-base'] ?? '';
+    if (info.args['path-base'] == null) {
       _warn('instruction ignored: ${info.instruction}');
     } else if (info.args.keys.length > 1) {
       _reportError(
@@ -218,7 +221,7 @@ class Updater {
   }
 
   int getIndentBy(String indentByAsString) {
-    if (indentByAsString == null) return 0;
+    if (indentByAsString == null) return defaultIndentation;
     String errorMsg = '';
     final result = int.parse(indentByAsString, onError: (s) {
       errorMsg = 'error parsing integer value: $s';
