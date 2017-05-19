@@ -98,7 +98,8 @@ void testsFromDefaultDir() {
     final _testFileNames = [
       'no_comment_prefix.md',
       'basic_no_region.dart',
-      'basic_with_region.dart'
+      'basic_with_region.dart',
+      'basic_with_region.jade',
     ];
 
     _testFileNames.forEach(_stdFileTest);
