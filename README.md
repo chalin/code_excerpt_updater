@@ -9,11 +9,11 @@ source files are processed. For Dart source files, code blocks in API comments a
 ```
 Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
--p, --fragment-path-prefix    Path prefix to directory containing code fragment files.
-                              (Default is current working directory.)
+-p, --fragment-dir-path    Path to the directory containing code fragment files.
+                           (Default is current working directory.)
 
--h, --help                    Show command help.
--i, --in-place                Update files in-place.
+-h, --help                 Show command help.
+-i, --in-place             Update files in-place.
 ```
 
 For example, you can run the updater over 

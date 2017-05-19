@@ -15,16 +15,17 @@ Function _listEq = const ListEquality().equals;
 ///
 /// Returns, as a string, a version of the given file source, with the
 /// `<?code-excerpt...?>` code fragments updated. Fragments are read from the
-/// [fragmentPathPrefix] directory.
+/// [fragmentDirPath] directory.
 class Updater {
-  final String fragmentPathPrefix;
+  final String fragmentDirPath;
+  String _fragmentSubdir = ''; // init from <?code-excerpt path-base="..."?>
 
   String _filePath = '';
   List<String> _lines = [];
 
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
-  Updater(this.fragmentPathPrefix);
+  Updater(this.fragmentDirPath);
 
   int get numSrcDirectives => _numSrcDirectives;
   int get numUpdatedFrag => _numUpdatedFrag;
@@ -38,6 +39,7 @@ class Updater {
   }
 
   String _updateSrc(String dartSource) {
+    _fragmentSubdir = '';
     _lines = dartSource.split(_eol);
     return _processLines();
   }
@@ -55,6 +57,7 @@ class Updater {
     while (_lines.isNotEmpty) {
       final line = _lines.removeAt(0);
       output.add(line);
+      // Deprecated support for old @source syntax
       var match = sourceRE.firstMatch(line);
       if (match != null) {
         output.addAll(_getUpdatedCodeBlock(match));
@@ -246,7 +249,7 @@ class Updater {
       file = p.join(dir, '$basename-$region$ext$fragExtension');
     }
 
-    final String fullPath = p.join(fragmentPathPrefix, file);
+    final String fullPath = p.join(fragmentDirPath, _fragmentSubdir, file);
     try {
       final result = new File(fullPath).readAsStringSync().split(_eol);
       // All excerpts are [_eol] terminated, so drop the last blank line

@@ -76,7 +76,7 @@ void testsFromDefaultDir() {
   group('Handle trailing space;', () {
     test('test input file has expected trailing whitespace', () {
       final fragPath = p.join(
-          updater.fragmentPathPrefix, 'frag_with_trailing_whitespace.dart.txt');
+          updater.fragmentDirPath, 'frag_with_trailing_whitespace.dart.txt');
       final frag = _readFile(fragPath);
       expect(frag.endsWith('\t \n\n'), isTrue);
     });

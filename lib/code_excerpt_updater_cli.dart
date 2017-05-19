@@ -13,19 +13,19 @@ final _validExt = new RegExp(r'\.(dart|md)$');
 /// Processes `.dart` and `.md` files, recursively traverses directories
 /// using [Updater]. See this command's help for CLI argument details.
 class UpdaterCLI {
-  static final _fragmentPathPrefixFlagName = 'fragment-path-prefix';
+  static final _fragmentDirPathFlagName = 'fragment-dir-path';
   static final _inPlaceFlagName = 'in-place';
 
   final _parser = new ArgParser()
-    ..addOption(_fragmentPathPrefixFlagName,
+    ..addOption(_fragmentDirPathFlagName,
         abbr: 'p',
-        help: 'Path prefix to directory containing code fragment files.\n'
+        help: 'Path to the directory containing code fragment files.\n'
             '(Default is current working directory.)')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help.')
     ..addFlag(_inPlaceFlagName,
         abbr: 'i', negatable: false, help: 'Update files in-place.');
 
-  String fragmentPathPrefix = '';
+  String fragmentDirPath = '';
   bool inPlaceFlag = false;
   List<String> pathsToFileOrDir = [];
 
@@ -55,7 +55,7 @@ class UpdaterCLI {
       return;
     }
 
-    fragmentPathPrefix = argResults[_fragmentPathPrefixFlagName] ?? '';
+    fragmentDirPath = argResults[_fragmentDirPathFlagName] ?? '';
     inPlaceFlag = argResults[_inPlaceFlagName] ?? false;
     argsAreValid = true;
   }
@@ -110,7 +110,7 @@ class UpdaterCLI {
   }
 
   Future _updateFile(String filePath) async {
-    final updater = new Updater(fragmentPathPrefix);
+    final updater = new Updater(fragmentDirPath);
     final result = updater.generateUpdatedFile(filePath);
 
     numSrcDirectives += updater.numSrcDirectives;
