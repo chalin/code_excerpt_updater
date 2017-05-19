@@ -4,6 +4,7 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 const _eol = '\n';
@@ -17,6 +18,8 @@ Function _listEq = const ListEquality().equals;
 /// `<?code-excerpt...?>` code fragments updated. Fragments are read from the
 /// [fragmentDirPath] directory.
 class Updater {
+  final Logger _log = new Logger('CEU');
+  final Stdout _stderr;
   final String fragmentDirPath;
   String _fragmentSubdir = ''; // init from <?code-excerpt path-base="..."?>
 
@@ -25,13 +28,19 @@ class Updater {
 
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
-  Updater(this.fragmentDirPath);
+  /// [es] defaults to [_stderr].
+  Updater(this.fragmentDirPath, {Stdout es}) : _stderr = es ?? stderr {
+    // Logger.root.level = Level.ALL;
+    Logger.root.onRecord.listen((LogRecord rec) {
+      print('${rec.level.name}: ${rec.time}: ${rec.message}');
+    });
+  }
 
   int get numSrcDirectives => _numSrcDirectives;
   int get numUpdatedFrag => _numUpdatedFrag;
 
   /// Returns the content of the file at [path] with code blocks updated.
-  /// Missing fragment files are reported via stderr.
+  /// Missing fragment files are reported via [es].
   /// If [path] cannot be read then an exception is thrown.
   String generateUpdatedFile(String path) {
     _filePath = path == null || path.isEmpty ? 'unnamed-file' : path;
@@ -46,7 +55,7 @@ class Updater {
 
   /// Regex matching code-excerpt processing instructions
   final RegExp procInstrRE = new RegExp(
-      r'^(\s*(///?\s*)?)?<\?code-excerpt\s+"([^"]+)"((\s+[-\w]+="[^"]+"\s*)*)\??>');
+      r'^(\s*(///?\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+="[^"]+"\s*)*)\??>');
 
   /// Regex matching @source lines
   final RegExp sourceRE = new RegExp(
@@ -63,8 +72,9 @@ class Updater {
         output.addAll(_getUpdatedCodeBlock(match));
         continue;
       }
+      if (!line.contains('<?code-excerpt')) continue;
       match = procInstrRE.firstMatch(line);
-      if (match == null) continue;
+      if (match == null || match[3] == null) continue;
       output.addAll(_getUpdatedCodeBlock2(match));
     }
     return output.join(_eol);
@@ -73,37 +83,37 @@ class Updater {
   /// Expects the next lines to be a markdown code block.
   /// Side-effect: consumes code-block lines.
   Iterable<String> _getUpdatedCodeBlock2(Match procInstrMatch) {
-    // stderr.writeln('>>> pIMatch: ${procInstrMatch.groupCount} - [${procInstrMatch[0]}]');
+    _log.finer('>>> pIMatch: ${procInstrMatch.groupCount} - [${procInstrMatch[0]}]');
     var i = 1;
     final linePrefix = procInstrMatch[i++] ?? '';
     i++; // final commentToken = match[i++];
+    i++; // optional path+region
     final pathAndOptRegion = procInstrMatch[i++];
     final args = {'path': pathAndOptRegion};
     _extractAndNormalizeArgs(args, procInstrMatch[i]);
     final pathToCodeExcerpt = args['path'];
     final region = args['region'];
-    // stderr.writeln('>>> arg: region = "${region}"');
+    _log.finest('>>> arg: region = "${region}"');
 
     // TODO: only match on same prefix.
     final codeBlockMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
     final currentCodeBlock = <String>[];
     if (_lines.isEmpty) {
-      stderr.writeln('Error: $_filePath: reached end of input, '
-          'expect code block - "$pathToCodeExcerpt"');
+      _reportError(
+          'reached end of input, expect code block - "$pathToCodeExcerpt"');
       return currentCodeBlock;
     }
     var line = _lines.removeAt(0);
     final openingCodeBlockLine = line;
     final firstLineMatch = codeBlockMarker.firstMatch(line);
     if (firstLineMatch == null || firstLineMatch[2] == null) {
-      stderr.writeln('Error: $_filePath: '
-          'code block should immediately follow <?code-excerpt?> - '
+      _reportError('code block should immediately follow <?code-excerpt?> - '
           '"$pathToCodeExcerpt"\n  not: $line');
       return <String>[openingCodeBlockLine];
     }
 
     final newCodeExcerpt = _getExcerpt(pathToCodeExcerpt, region);
-    // stderr.writeln('>>> got new excerpt: $newCodeExcerpt');
+    _log.finer('>>> got new excerpt: $newCodeExcerpt');
     if (newCodeExcerpt == null) {
       // Error has been reported. Return while leaving existing code.
       // We could skip ahead to the end of the code block but that
@@ -113,11 +123,11 @@ class Updater {
     String closingCodeBlockLine;
     while (_lines.isNotEmpty) {
       line = _lines[0];
-      // stderr.writeln('>>> looking for closing got line: $line');
+      _log.finest('>>> looking for closing got line: $line');
       final match = codeBlockMarker.firstMatch(line);
       if (match == null) {
         // TODO: it would be nice if we could print a line number too.
-        stderr.writeln('Error: $_filePath: unterminated markdown code block '
+        _reportError('unterminated markdown code block '
             'for <?code-excerpt "$pathToCodeExcerpt"?>');
         return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
       } else if (match[2] != null) {
@@ -142,7 +152,7 @@ class Updater {
     final result = <String>[openingCodeBlockLine]
       ..addAll(prefixedCodeExcerpt)
       ..add(closingCodeBlockLine);
-    // stderr.writeln('>>> result: $result');
+    _log.finer('>>> result: $result');
     return result;
   }
 
@@ -151,15 +161,15 @@ class Updater {
 
     final RegExp procInstrArgRE = new RegExp(r'(\s*([-\w]+)=")([^"}]+)"\s*');
     final matches = procInstrArgRE.allMatches(argsAsString);
-    // stderr.writeln('>>> arg ${matches.length} from $argsAsString');
+    _log.finest('>>> arg ${matches.length} from $argsAsString');
 
     for (final match in matches) {
-      // stderr.writeln('>>> arg: "${match[0]}"');
+      _log.finest('>>> arg: "${match[0]}"');
       final argName = match[2];
       final argValue = match[3];
       if (argName == null) continue;
       args[argName] = argValue ?? '';
-      // stderr.writeln('>>> arg: $argName = "${args[argName]}"');
+      _log.finest('>>> arg: $argName = "${args[argName]}"');
     }
     _processPathAndRegionArgs(args);
   }
@@ -177,7 +187,7 @@ class Updater {
       region = match[1]?.replaceAll(nonWordChars, '-');
     }
     args.putIfAbsent('region', () => region ?? '');
-    // stderr.writeln('>>> path="${args['path']}", region="${args['region']}"');
+    _log.finer('>>> path="${args['path']}", region="${args['region']}"');
   }
 
   int getIndentBy(String indentByAsString) {
@@ -189,8 +199,7 @@ class Updater {
     });
     if (result < 0 || result > 100) errorMsg = 'integer out of range: $result';
     if (errorMsg.isNotEmpty) {
-      stderr
-          .writeln('Error: $_filePath: <?code-excerpt?> indent-by: $errorMsg');
+      _reportError('<?code-excerpt?> indent-by: $errorMsg');
     }
     return result;
   }
@@ -221,8 +230,8 @@ class Updater {
       final match = publicApiRegEx.firstMatch(line);
       if (match == null) {
         // TODO: it would be nice if we could print a line number too.
-        stderr.writeln(
-            'Error: $_filePath: unterminated markdown code block for @source "$relativePath"');
+        _reportError(
+            'unterminated markdown code block for @source "$relativePath"');
         return <String>[];
       } else if (match[1] != null) {
         // We've found the closing code-block marker.
@@ -256,9 +265,10 @@ class Updater {
       while (result.length > 0 && result.last == '') result.removeLast();
       return result;
     } on FileSystemException catch (e) {
-      stderr.writeln(
-          'Error: $_filePath: cannot read fragment file "$fullPath"\n$e');
+      _reportError('cannot read fragment file "$fullPath"\n$e');
       return null;
     }
   }
+
+  void _reportError(String msg) => _stderr.writeln('Error: $_filePath: $msg');
 }
