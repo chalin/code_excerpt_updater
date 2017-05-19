@@ -4,6 +4,7 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 const _eol = '\n';
@@ -15,22 +16,31 @@ Function _listEq = const ListEquality().equals;
 ///
 /// Returns, as a string, a version of the given file source, with the
 /// `<?code-excerpt...?>` code fragments updated. Fragments are read from the
-/// [fragmentPathPrefix] directory.
+/// [fragmentDirPath] directory.
 class Updater {
-  final String fragmentPathPrefix;
+  final Logger _log = new Logger('CEU');
+  final Stdout _stderr;
+  final String fragmentDirPath;
+  String _fragmentSubdir = ''; // init from <?code-excerpt path-base="..."?>
 
   String _filePath = '';
   List<String> _lines = [];
 
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
-  Updater(this.fragmentPathPrefix);
+  /// [err] defaults to [_stderr].
+  Updater(this.fragmentDirPath, {Stdout err}) : _stderr = err ?? stderr {
+    // Logger.root.level = Level.ALL;
+    Logger.root.onRecord.listen((LogRecord rec) {
+      print('${rec.level.name}: ${rec.time}: ${rec.message}');
+    });
+  }
 
   int get numSrcDirectives => _numSrcDirectives;
   int get numUpdatedFrag => _numUpdatedFrag;
 
   /// Returns the content of the file at [path] with code blocks updated.
-  /// Missing fragment files are reported via stderr.
+  /// Missing fragment files are reported via `err`.
   /// If [path] cannot be read then an exception is thrown.
   String generateUpdatedFile(String path) {
     _filePath = path == null || path.isEmpty ? 'unnamed-file' : path;
@@ -38,13 +48,14 @@ class Updater {
   }
 
   String _updateSrc(String dartSource) {
+    _fragmentSubdir = '';
     _lines = dartSource.split(_eol);
     return _processLines();
   }
 
   /// Regex matching code-excerpt processing instructions
   final RegExp procInstrRE = new RegExp(
-      r'^(\s*(///?\s*)?)?<\?code-excerpt\s+"([^"]+)"((\s+[-\w]+="[^"]+"\s*)*)\??>');
+      r'^(\s*(///?\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+="[^"]+"\s*)*)\??>');
 
   /// Regex matching @source lines
   final RegExp sourceRE = new RegExp(
@@ -55,52 +66,64 @@ class Updater {
     while (_lines.isNotEmpty) {
       final line = _lines.removeAt(0);
       output.add(line);
+      // Deprecated support for old @source syntax
       var match = sourceRE.firstMatch(line);
       if (match != null) {
-        output.addAll(_getUpdatedCodeBlock(match));
+        output.addAll(_getUpdatedAtSourceCodeBlock(match));
         continue;
       }
+      if (!line.contains('<?code-excerpt')) continue;
       match = procInstrRE.firstMatch(line);
-      if (match == null) continue;
-      output.addAll(_getUpdatedCodeBlock2(match));
+      if (match == null) {
+        _reportError('invalid processing instruction: $line');
+        continue;
+      }
+      final info = _extractAndNormalizeArgs(match);
+
+      if (info.unnamedArg == null) {
+        _processSetPath(info);
+      } else {
+        output.addAll(_getUpdatedCodeBlock(info));
+      }
     }
     return output.join(_eol);
   }
 
+  void _processSetPath(InstrInfo info) {
+    _fragmentSubdir = info.args['path-base'];
+    if (_fragmentSubdir == null) {
+      // Ignore. Maybe report these if we eventually support a verbose mode.
+    } else if (info.args.keys.length > 1) {
+      _reportError(
+          '"path-base" should be the only argument in the instruction');
+    }
+  }
+
   /// Expects the next lines to be a markdown code block.
   /// Side-effect: consumes code-block lines.
-  Iterable<String> _getUpdatedCodeBlock2(Match procInstrMatch) {
-    // stderr.writeln('>>> pIMatch: ${procInstrMatch.groupCount} - [${procInstrMatch[0]}]');
-    var i = 1;
-    final linePrefix = procInstrMatch[i++] ?? '';
-    i++; // final commentToken = match[i++];
-    final pathAndOptRegion = procInstrMatch[i++];
-    final args = {'path': pathAndOptRegion};
-    _extractAndNormalizeArgs(args, procInstrMatch[i]);
-    final pathToCodeExcerpt = args['path'];
-    final region = args['region'];
-    // stderr.writeln('>>> arg: region = "${region}"');
+  Iterable<String> _getUpdatedCodeBlock(InstrInfo info) {
+    final args = info.args;
+    final pathToCodeExcerpt = info.path;
 
     // TODO: only match on same prefix.
     final codeBlockMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
     final currentCodeBlock = <String>[];
     if (_lines.isEmpty) {
-      stderr.writeln('Error: $_filePath: reached end of input, '
-          'expect code block - "$pathToCodeExcerpt"');
+      _reportError(
+          'reached end of input, expect code block - "$pathToCodeExcerpt"');
       return currentCodeBlock;
     }
     var line = _lines.removeAt(0);
     final openingCodeBlockLine = line;
     final firstLineMatch = codeBlockMarker.firstMatch(line);
     if (firstLineMatch == null || firstLineMatch[2] == null) {
-      stderr.writeln('Error: $_filePath: '
-          'code block should immediately follow <?code-excerpt?> - '
+      _reportError('code block should immediately follow <?code-excerpt?> - '
           '"$pathToCodeExcerpt"\n  not: $line');
       return <String>[openingCodeBlockLine];
     }
 
-    final newCodeExcerpt = _getExcerpt(pathToCodeExcerpt, region);
-    // stderr.writeln('>>> got new excerpt: $newCodeExcerpt');
+    final newCodeExcerpt = _getExcerpt(pathToCodeExcerpt, info.region);
+    _log.finer('>>> got new excerpt: $newCodeExcerpt');
     if (newCodeExcerpt == null) {
       // Error has been reported. Return while leaving existing code.
       // We could skip ahead to the end of the code block but that
@@ -110,11 +133,11 @@ class Updater {
     String closingCodeBlockLine;
     while (_lines.isNotEmpty) {
       line = _lines[0];
-      // stderr.writeln('>>> looking for closing got line: $line');
+      _log.finest('>>> looking for closing got line: $line');
       final match = codeBlockMarker.firstMatch(line);
       if (match == null) {
         // TODO: it would be nice if we could print a line number too.
-        stderr.writeln('Error: $_filePath: unterminated markdown code block '
+        _reportError('unterminated markdown code block '
             'for <?code-excerpt "$pathToCodeExcerpt"?>');
         return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
       } else if (match[2] != null) {
@@ -127,9 +150,12 @@ class Updater {
       _lines.removeAt(0);
     }
     if (closingCodeBlockLine == null) {
+      _reportError('unterminated markdown code block '
+          'for <?code-excerpt "$pathToCodeExcerpt"?>');
       return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
     }
     _numSrcDirectives++;
+    final linePrefix = info.linePrefix;
     final indentation = ' ' * getIndentBy(args['indent-by']);
     final prefixedCodeExcerpt = newCodeExcerpt
         .map((line) => '$linePrefix$indentation$line'
@@ -139,42 +165,57 @@ class Updater {
     final result = <String>[openingCodeBlockLine]
       ..addAll(prefixedCodeExcerpt)
       ..add(closingCodeBlockLine);
-    // stderr.writeln('>>> result: $result');
+    _log.finer('>>> result: $result');
     return result;
   }
 
-  void _extractAndNormalizeArgs(Map<String, String> args, String argsAsString) {
+  InstrInfo _extractAndNormalizeArgs(Match procInstrMatch) {
+    _log.finer(
+        '>>> pIMatch: ${procInstrMatch.groupCount} - [${procInstrMatch[0]}]');
+    final info = new InstrInfo();
+    var i = 1;
+    info.linePrefix = procInstrMatch[i++] ?? '';
+    i++; // final commentToken = match[i++];
+    i++; // optional path+region
+    final pathAndOptRegion = procInstrMatch[i++];
+    info.unnamedArg = pathAndOptRegion;
+    __extractAndNormalizeNamedArgs(info, procInstrMatch[i]);
+    return info;
+  }
+
+  void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
 
     final RegExp procInstrArgRE = new RegExp(r'(\s*([-\w]+)=")([^"}]+)"\s*');
     final matches = procInstrArgRE.allMatches(argsAsString);
-    // stderr.writeln('>>> arg ${matches.length} from $argsAsString');
+    _log.finest('>>> arg ${matches.length} from $argsAsString');
 
     for (final match in matches) {
-      // stderr.writeln('>>> arg: "${match[0]}"');
+      _log.finest('>>> arg: "${match[0]}"');
       final argName = match[2];
       final argValue = match[3];
       if (argName == null) continue;
-      args[argName] = argValue ?? '';
-      // stderr.writeln('>>> arg: $argName = "${args[argName]}"');
+      info.args[argName] = argValue ?? '';
+      _log.finest('>>> arg: $argName = "${info.args[argName]}"');
     }
-    _processPathAndRegionArgs(args);
+    _processPathAndRegionArgs(info);
   }
 
   final RegExp regionInPath = new RegExp(r'\s*\((.+)\)\s*$');
   final RegExp nonWordChars = new RegExp(r'[^\w]+');
 
-  void _processPathAndRegionArgs(Map<String, String> args) {
-    final path = args['path'];
+  void _processPathAndRegionArgs(InstrInfo info) {
+    final path = info.unnamedArg;
+    if (path == null) return;
     final match = regionInPath.firstMatch(path);
-    String region;
-    if (match != null) {
+    if (match == null) {
+      info.path = path;
+    } else {
       // Remove region spec from path
-      args['path'] = path.substring(0, match.start);
-      region = match[1]?.replaceAll(nonWordChars, '-');
+      info.path = path.substring(0, match.start);
+      info.region = match[1]?.replaceAll(nonWordChars, '-');
     }
-    args.putIfAbsent('region', () => region ?? '');
-    // stderr.writeln('>>> path="${args['path']}", region="${args['region']}"');
+    _log.finer('>>> path="${info.path}", region="${info.region}"');
   }
 
   int getIndentBy(String indentByAsString) {
@@ -186,14 +227,15 @@ class Updater {
     });
     if (result < 0 || result > 100) errorMsg = 'integer out of range: $result';
     if (errorMsg.isNotEmpty) {
-      stderr
-          .writeln('Error: $_filePath: <?code-excerpt?> indent-by: $errorMsg');
+      _reportError('<?code-excerpt?> indent-by: $errorMsg');
     }
     return result;
   }
 
+  @deprecated
+
   /// Side-effect: consumes code-block lines of [_lines].
-  Iterable<String> _getUpdatedCodeBlock(Match match) {
+  Iterable<String> _getUpdatedAtSourceCodeBlock(Match match) {
     var i = 1;
     final linePrefix = match[i++];
     i++; // final commentTokenWithSapce = match[i++];
@@ -218,8 +260,8 @@ class Updater {
       final match = publicApiRegEx.firstMatch(line);
       if (match == null) {
         // TODO: it would be nice if we could print a line number too.
-        stderr.writeln(
-            'Error: $_filePath: unterminated markdown code block for @source "$relativePath"');
+        _reportError(
+            'unterminated markdown code block for @source "$relativePath"');
         return <String>[];
       } else if (match[1] != null) {
         // We've found the closing code-block marker.
@@ -246,16 +288,39 @@ class Updater {
       file = p.join(dir, '$basename-$region$ext$fragExtension');
     }
 
-    final String fullPath = p.join(fragmentPathPrefix, file);
+    final String fullPath = p.join(fragmentDirPath, _fragmentSubdir, file);
     try {
       final result = new File(fullPath).readAsStringSync().split(_eol);
       // All excerpts are [_eol] terminated, so drop the last blank line
       while (result.length > 0 && result.last == '') result.removeLast();
       return result;
     } on FileSystemException catch (e) {
-      stderr.writeln(
-          'Error: $_filePath: cannot read fragment file "$fullPath"\n$e');
+      _reportError('cannot read fragment file "$fullPath"\n$e');
       return null;
     }
   }
+
+  void _reportError(String msg) => _stderr.writeln('Error: $_filePath: $msg');
+}
+
+class InstrInfo {
+  String linePrefix = '';
+
+  /// Optional. Currently represents a path + optional region
+  String unnamedArg;
+
+  String _path;
+  String get path => _path ?? args['path'] ?? '';
+  set path(String p) {
+    _path = p;
+  }
+
+  String _region;
+  set region(String r) {
+    _region = r;
+  }
+
+  String get region => _region ?? args['region'] ?? '';
+
+  final Map<String, String> args = {};
 }
