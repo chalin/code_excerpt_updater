@@ -5,7 +5,7 @@ Test: code-excerpt instruction w/o a path; i.e., which need not be updated:
 <h1>Hello World!</h1>
 ```
 
-<?code-excerpt ?>
+<?code-excerpt?>
 ```dart
 var x = 1;
 ```
