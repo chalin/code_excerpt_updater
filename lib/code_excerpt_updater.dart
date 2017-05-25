@@ -326,7 +326,7 @@ class InstrInfo {
     _region = r;
   }
 
-  String get region => _region ?? args['region'] ?? '';
+  String get region => args['region'] ?? _region ?? '';
 
   final Map<String, String> args = {};
 }
