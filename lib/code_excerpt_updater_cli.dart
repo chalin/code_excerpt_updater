@@ -14,7 +14,8 @@ final _validExt = new RegExp(r'\.(dart|jade|md)$');
 /// using [Updater]. See this command's help for CLI argument details.
 class UpdaterCLI {
   static final _fragmentDirPathFlagName = 'fragment-dir-path';
-  static final _inPlaceFlagName = 'in-place';
+  static final _inPlaceFlagName = 'write-in-place';
+  static final _indentFlagName = 'indentation';
 
   final _parser = new ArgParser()
     ..addOption(_fragmentDirPathFlagName,
@@ -22,11 +23,15 @@ class UpdaterCLI {
         help: 'Path to the directory containing code fragment files.\n'
             '(Default is current working directory.)')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help.')
+    ..addOption(_indentFlagName,
+        abbr: 'i',
+        help: 'Default indentation to be used for code inside code blocks.')
     ..addFlag(_inPlaceFlagName,
-        abbr: 'i', negatable: false, help: 'Update files in-place.');
+        abbr: 'w', negatable: false, help: 'Write updates to files in-place.');
 
-  String fragmentDirPath = '';
-  bool inPlaceFlag = false;
+  String fragmentDirPath;
+  bool inPlaceFlag;
+  int indentation;
   List<String> pathsToFileOrDir = [];
 
   bool argsAreValid = false;
@@ -37,26 +42,33 @@ class UpdaterCLI {
 
   UpdaterCLI();
 
-  void setArgs(List<String> args) {
-    var argResults;
+  void setArgs(List<String> argsAsStrings) {
+    ArgResults args;
     try {
-      argResults = _parser.parse(args);
+      args = _parser.parse(argsAsStrings);
     } on FormatException catch (e) {
       print('${e.message}\n');
       _printUsageAndExit(_parser, exitCode: 64);
     }
-    pathsToFileOrDir = argResults.rest;
+    pathsToFileOrDir = args.rest;
 
-    if (argResults['help']) _printHelpAndExit(_parser);
+    if (args['help']) _printHelpAndExit(_parser);
 
-    if (pathsToFileOrDir.length < 1) {
-      stderr.writeln('Error: expecting one or more path arguments');
-      exitCode = 1;
-      return;
+    int i = 0;
+    if (args[_indentFlagName] != null) {
+      i = int.parse(args[_indentFlagName], onError: (_) => null);
+      if (i == null) {
+        _printUsageAndExit(_parser,
+            msg: 'Integer indentation expected, not "${args[_indentFlagName]}');
+      }
     }
+    indentation = i;
 
-    fragmentDirPath = argResults[_fragmentDirPathFlagName] ?? '';
-    inPlaceFlag = argResults[_inPlaceFlagName] ?? false;
+    if (pathsToFileOrDir.length < 1)
+      _printUsageAndExit(_parser, msg: 'Expecting one or more path arguments');
+
+    fragmentDirPath = args[_fragmentDirPathFlagName] ?? '';
+    inPlaceFlag = args[_inPlaceFlagName] ?? false;
     argsAreValid = true;
   }
 
@@ -110,7 +122,8 @@ class UpdaterCLI {
   }
 
   Future _updateFile(String filePath) async {
-    final updater = new Updater(fragmentDirPath);
+    final updater =
+        new Updater(fragmentDirPath, defaultIndentation: indentation);
     final result = updater.generateUpdatedFile(filePath);
 
     numSrcDirectives += updater.numSrcDirectives;
@@ -123,14 +136,15 @@ class UpdaterCLI {
     }
   }
 
-  void _printHelpAndExit(ArgParser parser, {int exitCode: 0}) {
+  void _printHelpAndExit(ArgParser parser) {
     print('Use $_commandName to update code fragments within markdown '
         'code blocks preceded with <?code-excerpt?> directives. '
         '(See the tool\'s GitHub repo README for details.)\n');
-    _printUsageAndExit(parser, exitCode: exitCode);
+    _printUsageAndExit(parser);
   }
 
-  void _printUsageAndExit(ArgParser parser, {int exitCode: 0}) {
+  void _printUsageAndExit(ArgParser parser, {String msg, int exitCode: 1}) {
+    if (msg != null) print('\n$msg\n');
     print('Usage: $_commandName [OPTIONS] file_or_directory...\n');
     print(parser.usage);
     exit(exitCode);
