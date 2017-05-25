@@ -41,7 +41,7 @@ final _errMsgs = {
       '  not: int x = 0;',
   'no_change/no_path.md':
       'Warning: test_data/src/no_change/no_path.md: instruction ignored: <?code-excerpt title="abc"?>;'
-      'Warning: test_data/src/no_change/no_path.md: instruction ignored: <?code-excerpt ?>',
+      'Warning: test_data/src/no_change/no_path.md: instruction ignored: <?code-excerpt?>',
 };
 
 void _stdFileTest(String testFilePath) {
