@@ -9,12 +9,16 @@ Jade (`.jade`) files are processed. For Dart source files, code blocks in API co
 ```
 Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
--p, --fragment-dir-path    Path to the directory containing code fragment files.
-                           (Default is current working directory.)
+-p, --fragment-dir-path               Path to the directory containing code fragment files
+                                      (defaults to "", that is, the current working directory)
 
--h, --help                 Show command help.
--i, --indentation          Default code indentation to be used for code inside code blocks.
--w, --write-in-place             Write updates to files in-place.
+-h, --help                            Show command help
+-i, --indentation                     Default number of spaces to use as indentation for code inside code blocks
+                                      (defaults to "0")
+
+-w, --write-in-place                  Write updates to files in-place
+    --[no-]escape-ng-interpolation    Escape Angular interpolation syntax {{...}} as {!{...}!}
+                                      (defaults to on)
 ```
 
 For example, you can run the updater over 

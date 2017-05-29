@@ -74,6 +74,7 @@ void main() {
   group('Basic:', testsFromDefaultDir);
   group('Set path:', testSetPath);
   group('Default indentation:', testDefaultIndentation);
+  group('Disable escape ng interpolation:', testNoEscapeNgInterpolation);
 }
 
 void testsFromDefaultDir() {
@@ -101,9 +102,10 @@ void testsFromDefaultDir() {
 
   group('Code updates;', () {
     final _testFileNames = [
-      'no_comment_prefix.md',
       'basic_no_region.dart',
       'basic_with_region.dart',
+      'escape_ng_interpolation.md',
+      'no_comment_prefix.md',
     ];
 
     _testFileNames.forEach(_stdFileTest);
@@ -136,4 +138,13 @@ void testDefaultIndentation() {
   });
 
   _stdFileTest('basic_with_region.jade');
+}
+
+void testNoEscapeNgInterpolation() {
+  setUp(() {
+    updater =
+        new Updater(p.join(_testDir, 'frag'), escapeNgInterpolation: false);
+  });
+
+  _stdFileTest('no_escape_ng_interpolation.md');
 }
