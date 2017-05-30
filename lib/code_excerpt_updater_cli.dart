@@ -13,6 +13,7 @@ final _validExt = new RegExp(r'\.(dart|jade|md)$');
 /// Processes `.dart` and `.md` files, recursively traverses directories
 /// using [Updater]. See this command's help for CLI argument details.
 class UpdaterCLI {
+  static final _escapeNgInterpolationFlagName = 'escape-ng-interpolation';
   static final _fragmentDirPathFlagName = 'fragment-dir-path';
   static final _inPlaceFlagName = 'write-in-place';
   static final _indentFlagName = 'indentation';
@@ -20,15 +21,24 @@ class UpdaterCLI {
   final _parser = new ArgParser()
     ..addOption(_fragmentDirPathFlagName,
         abbr: 'p',
-        help: 'Path to the directory containing code fragment files.\n'
-            '(Default is current working directory.)')
-    ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help.')
+        help: 'Path to the directory containing code fragment files\n'
+            '(defaults to "", that is, the current working directory)')
+    ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help')
     ..addOption(_indentFlagName,
         abbr: 'i',
-        help: 'Default indentation to be used for code inside code blocks.')
+        defaultsTo: "0",
+        help:
+            'Default number of spaces to use as indentation for code inside code blocks')
     ..addFlag(_inPlaceFlagName,
-        abbr: 'w', negatable: false, help: 'Write updates to files in-place.');
+        abbr: 'w',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Write updates to files in-place')
+    ..addFlag(_escapeNgInterpolationFlagName,
+        defaultsTo: true,
+        help: 'Escape Angular interpolation syntax {{...}} as {!{...}!}');
 
+  bool escapeNgInterpolation;
   String fragmentDirPath;
   bool inPlaceFlag;
   int indentation;
@@ -67,8 +77,9 @@ class UpdaterCLI {
     if (pathsToFileOrDir.length < 1)
       _printUsageAndExit(_parser, msg: 'Expecting one or more path arguments');
 
+    escapeNgInterpolation = args[_escapeNgInterpolationFlagName];
     fragmentDirPath = args[_fragmentDirPathFlagName] ?? '';
-    inPlaceFlag = args[_inPlaceFlagName] ?? false;
+    inPlaceFlag = args[_inPlaceFlagName];
     argsAreValid = true;
   }
 
@@ -122,8 +133,9 @@ class UpdaterCLI {
   }
 
   Future _updateFile(String filePath) async {
-    final updater =
-        new Updater(fragmentDirPath, defaultIndentation: indentation);
+    final updater = new Updater(fragmentDirPath,
+        defaultIndentation: indentation,
+        escapeNgInterpolation: escapeNgInterpolation);
     final result = updater.generateUpdatedFile(filePath);
 
     numSrcDirectives += updater.numSrcDirectives;

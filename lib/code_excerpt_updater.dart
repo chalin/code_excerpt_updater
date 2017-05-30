@@ -22,6 +22,7 @@ class Updater {
   final Stdout _stderr;
   final String fragmentDirPath;
   final int defaultIndentation;
+  final bool escapeNgInterpolation;
 
   String _fragmentSubdir = ''; // init from <?code-excerpt path-base="..."?>
 
@@ -31,7 +32,10 @@ class Updater {
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
   /// [err] defaults to [_stderr].
-  Updater(this.fragmentDirPath, {this.defaultIndentation = 0, Stdout err})
+  Updater(this.fragmentDirPath,
+      {this.defaultIndentation = 0,
+      this.escapeNgInterpolation = true,
+      Stdout err})
       : _stderr = err ?? stderr {
     // Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((LogRecord rec) {
@@ -159,10 +163,14 @@ class Updater {
     _numSrcDirectives++;
     final linePrefix = info.linePrefix;
     final indentation = ' ' * getIndentBy(args['indent-by']);
-    final prefixedCodeExcerpt = newCodeExcerpt
-        .map((line) => '$linePrefix$indentation$line'
-            .replaceFirst(new RegExp(r'\s+$'), ''))
-        .toList();
+    final prefixedCodeExcerpt = newCodeExcerpt.map((line) {
+      final _line =
+          '$linePrefix$indentation$line'.replaceFirst(new RegExp(r'\s+$'), '');
+      return this.escapeNgInterpolation
+          ? _line.replaceAllMapped(
+              new RegExp(r'({){|(})}'), (m) => '${m[1]??m[2]}!${m[1]??m[2]}')
+          : _line;
+    }).toList();
     if (!_listEq(currentCodeBlock, prefixedCodeExcerpt)) _numUpdatedFrag++;
     final result = <String>[openingCodeBlockLine]
       ..addAll(prefixedCodeExcerpt)
