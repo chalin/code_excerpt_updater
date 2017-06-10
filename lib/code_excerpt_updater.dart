@@ -27,6 +27,7 @@ class Updater {
   String _fragmentSubdir = ''; // init from <?code-excerpt path-base="..."?>
 
   String _filePath = '';
+  int _origNumLines = 0;
   List<String> _lines = [];
 
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
@@ -46,6 +47,8 @@ class Updater {
   int get numSrcDirectives => _numSrcDirectives;
   int get numUpdatedFrag => _numUpdatedFrag;
 
+  int get lineNum => _origNumLines - _lines.length;
+
   /// Returns the content of the file at [path] with code blocks updated.
   /// Missing fragment files are reported via `err`.
   /// If [path] cannot be read then an exception is thrown.
@@ -57,6 +60,7 @@ class Updater {
   String _updateSrc(String dartSource) {
     _fragmentSubdir = '';
     _lines = dartSource.split(_eol);
+    _origNumLines = _lines.length;
     return _processLines();
   }
 
@@ -97,12 +101,20 @@ class Updater {
   }
 
   void _processSetPath(InstrInfo info) {
-    _fragmentSubdir = info.args['path-base'] ?? '';
     if (info.args['path-base'] == null) {
-      _warn('instruction ignored: ${info.instruction}');
-    } else if (info.args.keys.length > 1) {
-      _reportError(
-          '"path-base" should be the only argument in the instruction');
+      if (info.args.keys.length == 0) {
+        // Empty instruction is ok.
+      } else if (info.args.keys.length == 1 && info.args['title'] != null) {
+        // Only asking for a title is ok.
+      } else {
+        _warn('instruction ignored: ${info.instruction}');
+      }
+    } else {
+      _fragmentSubdir = info.args['path-base'];
+      if (info.args.keys.length > 1) {
+        _reportError(
+            '"path-base" should be the only argument in the instruction:  ${info.instruction}');
+      }
     }
   }
 
@@ -310,8 +322,10 @@ class Updater {
     }
   }
 
-  void _warn(String msg) => _stderr.writeln('Warning: $_filePath: $msg');
-  void _reportError(String msg) => _stderr.writeln('Error: $_filePath: $msg');
+  void _warn(String msg) =>
+      _stderr.writeln('Warning: $_filePath:$lineNum $msg');
+  void _reportError(String msg) =>
+      _stderr.writeln('Error: $_filePath:$lineNum $msg');
 }
 
 class InstrInfo {
