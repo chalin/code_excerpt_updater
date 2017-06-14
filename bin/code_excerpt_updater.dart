@@ -13,7 +13,7 @@ Future<Null> main(List<String> args) async {
   if (!updater.argsAreValid) return;
   await updater.processArgs();
   if (exitCode == 0) {
-    final msg = 'Processed ${updater.numFiles} Dart files: '
+    final msg = 'Processed ${updater.numFiles} Dart/Jade/Markdown files: '
         '${updater.numUpdatedFrag} out of '
         '${updater.numSrcDirectives} fragments needed updating.';
     print(msg);
