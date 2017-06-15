@@ -100,6 +100,7 @@ void testsFromDefaultDir() {
   group('Code updates;', () {
     final _testFileNames = [
       'basic_no_region.dart',
+      'basic_with_empty_region.md',
       'basic_with_region.dart',
       'escape_ng_interpolation.md',
       'no_comment_prefix.md',
