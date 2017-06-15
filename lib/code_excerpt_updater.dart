@@ -66,7 +66,7 @@ class Updater {
 
   /// Regex matching code-excerpt processing instructions
   final RegExp procInstrRE = new RegExp(
-      r'^(\s*(///?\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+(\s*=\s*"[^"]+")?\s*)*)\??>');
+      r'^(\s*(///?\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+(\s*=\s*"[^"]*")?\s*)*)\??>');
 
   /// Regex matching @source lines
   final RegExp sourceRE = new RegExp(
@@ -208,9 +208,9 @@ class Updater {
   void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
 
-    final RegExp procInstrArgRE = new RegExp(r'(\s*([-\w]+)=")([^"}]+)"\s*');
+    final RegExp procInstrArgRE = new RegExp(r'(\s*([-\w]+)=")([^"}]*)"\s*');
     final matches = procInstrArgRE.allMatches(argsAsString);
-    _log.finer('>>> arg ${matches.length} from $argsAsString');
+    _log.finer('>>> ${matches.length} args with values in $argsAsString');
 
     for (final match in matches) {
       _log.finer('>>> arg: "${match[0]}"');
@@ -233,7 +233,7 @@ class Updater {
     if (match == null) {
       info.path = path;
     } else {
-      // Remove region spec from path
+      // Remove region from path
       info.path = path.substring(0, match.start);
       info.region = match[1]?.replaceAll(nonWordChars, '-');
     }
