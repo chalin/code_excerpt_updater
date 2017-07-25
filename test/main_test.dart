@@ -103,6 +103,7 @@ void testsFromDefaultDir() {
       'basic_with_empty_region.md',
       'basic_with_region.dart',
       'escape_ng_interpolation.md',
+      'fragment-indentation.md',
       'no_comment_prefix.md',
     ];
 
