@@ -2,6 +2,7 @@
 // is governed by a MIT-style license that can be found in the LICENSE file.
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
@@ -313,13 +314,30 @@ class Updater {
     final String fullPath = p.join(fragmentDirPath, _fragmentSubdir, file);
     try {
       final result = new File(fullPath).readAsStringSync().split(_eol);
-      // All excerpts are [_eol] terminated, so drop the last blank line
+      // All excerpts are [_eol] terminated, so drop trailing blank lines
       while (result.length > 0 && result.last == '') result.removeLast();
-      return result;
+      return _trimMinLeadingSpace(result);
     } on FileSystemException catch (e) {
       _reportError('cannot read fragment file "$fullPath"\n$e');
       return null;
     }
+  }
+
+  final _blankLineRegEx = new RegExp(r'^\s*$');
+  final _leadingWhitespaceRegEx = new RegExp(r'^[ \t]*');
+
+  Iterable<String> _trimMinLeadingSpace(List<String> lines) {
+    final nonblankLines = lines.where((s) => !_blankLineRegEx.hasMatch(s));
+    // Length of leading spaces to be trimmed
+    final lengths = nonblankLines.map((s) {
+      final match = _leadingWhitespaceRegEx.firstMatch(s);
+      return match == null ? 0 : match[0].length;
+    });
+    if (lengths.isEmpty) return lines;
+    final len = lengths.reduce(min);
+    return len == 0
+        ? lines
+        : lines.map((line) => line.length < len ? line : line.substring(len));
   }
 
   void _warn(String msg) =>
