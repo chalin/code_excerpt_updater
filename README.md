@@ -26,7 +26,7 @@ For example, you can run the updater over
 
 `angular2> dart ../code_excerpt_updater/bin/code_excerpt_updater.dart -p ../site-webdev/tmp/_fragments/_api -w lib`
 
-## `<?code-exceprt?>` syntax
+## `<?code-excerpt?>` syntax
 
 The instruction comes in two forms. The first (and most common) form must immediately precede a markdown code block:
 
