@@ -70,23 +70,13 @@ class Updater {
   final RegExp procInstrRE = new RegExp(
       r'^(\s*(///?\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+(\s*=\s*"[^"]*")?\s*)*)\??>');
 
-  /// Regex matching @source lines
-  final RegExp sourceRE = new RegExp(
-      r'^(///\s*)((<!--|///?)\s*)?{@source\s+"([^"}]+)"((\s+region=")([^"}]+)"\s*)?}');
-
   String _processLines() {
     final List<String> output = [];
     while (_lines.isNotEmpty) {
       final line = _lines.removeAt(0);
       output.add(line);
-      // Deprecated support for old @source syntax
-      var match = sourceRE.firstMatch(line);
-      if (match != null) {
-        output.addAll(_getUpdatedAtSourceCodeBlock(match));
-        continue;
-      }
       if (!line.contains('<?code-excerpt')) continue;
-      match = procInstrRE.firstMatch(line);
+      final match = procInstrRE.firstMatch(line);
       if (match == null) {
         _reportError('invalid processing instruction: $line');
         continue;
@@ -256,51 +246,6 @@ class Updater {
       _reportError('<?code-excerpt?> indent-by: $errorMsg');
     }
     return result;
-  }
-
-  @deprecated
-
-  /// Side-effect: consumes code-block lines of [_lines].
-  Iterable<String> _getUpdatedAtSourceCodeBlock(Match match) {
-    var i = 1;
-    final linePrefix = match[i++];
-    i++; // final commentTokenWithSapce = match[i++];
-    i++; // final commentTokenWith = match[i++];
-    final relativePath = match[i++];
-    i++; // final regionArgWithSpaceAndArg = match[i++]; // e.g., '  region="abc"  '
-    i++; // final regionArgWithSpace = match[i++]; // e.g., '  region='
-    final region = match[i++] ?? ''; // e.g., 'abc'
-
-    final newCodeExcerpt = _getExcerpt(relativePath, region);
-    if (newCodeExcerpt == null) {
-      // Error has been reported. Return while leaving existing code.
-      // We could skip ahead to the end of the code block but that
-      // will be handled by the outer loop.
-      return <String>[];
-    }
-    var line;
-    final currentCodeBlock = <String>[];
-    final publicApiRegEx = new RegExp(r'^///\s*(```)?');
-    while (_lines.isNotEmpty) {
-      line = _lines[0];
-      final match = publicApiRegEx.firstMatch(line);
-      if (match == null) {
-        // TODO: it would be nice if we could print a line number too.
-        _reportError(
-            'unterminated markdown code block for @source "$relativePath"');
-        return <String>[];
-      } else if (match[1] != null) {
-        // We've found the closing code-block marker.
-        break;
-      }
-      currentCodeBlock.add(line);
-      _lines.removeAt(0);
-    }
-    _numSrcDirectives++;
-    final prefixedCodeExcerpt =
-        newCodeExcerpt.map((line) => '$linePrefix$line'.trim()).toList();
-    if (!_listEq(currentCodeBlock, prefixedCodeExcerpt)) _numUpdatedFrag++;
-    return prefixedCodeExcerpt;
   }
 
   /*@nullable*/
