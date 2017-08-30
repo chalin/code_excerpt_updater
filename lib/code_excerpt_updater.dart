@@ -86,10 +86,7 @@ class Updater {
       if (info.unnamedArg == null) {
         _processSetPath(info);
       } else {
-        var updatedBlock = info.args['diff-with'] == null
-            ? _getUpdatedCodeBlock(info)
-            : _getUpdatedDiffCodeBlock(info);
-        output.addAll(updatedBlock);
+        output.addAll(_getUpdatedCodeBlock(info));
       }
     }
     return output.join(_eol);
@@ -115,27 +112,15 @@ class Updater {
 
   /// Expects the next lines to be a markdown code block.
   /// Side-effect: consumes code-block lines.
-  Iterable<String> _getUpdatedDiffCodeBlock(InstrInfo info) {
-    final args = info.args;
-    final pathToSrc1 = info.path;
-    final pathToSrc2 = args['diff-with'];
-
-    print('Diff $pathToSrc1 $pathToSrc2');
-    return [];
-  }
-
-  /// Expects the next lines to be a markdown code block.
-  /// Side-effect: consumes code-block lines.
   Iterable<String> _getUpdatedCodeBlock(InstrInfo info) {
     final args = info.args;
-    final pathToCodeExcerpt = info.path;
+    final infoPath = info.path;
 
     // TODO: only match on same prefix.
     final codeBlockMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
     final currentCodeBlock = <String>[];
     if (_lines.isEmpty) {
-      _reportError(
-          'reached end of input, expect code block - "$pathToCodeExcerpt"');
+      _reportError('reached end of input, expect code block - "$infoPath"');
       return currentCodeBlock;
     }
     var line = _lines.removeAt(0);
@@ -143,13 +128,23 @@ class Updater {
     final firstLineMatch = codeBlockMarker.firstMatch(line);
     if (firstLineMatch == null || firstLineMatch[2] == null) {
       _reportError('code block should immediately follow <?code-excerpt?> - '
-          '"$pathToCodeExcerpt"\n  not: $line');
+          '"$infoPath"\n  not: $line');
       return <String>[openingCodeBlockLine];
     }
 
-    final newCodeExcerpt = _getExcerpt(pathToCodeExcerpt, info.region);
-    _log.finer('>>> got new excerpt: $newCodeExcerpt');
-    if (newCodeExcerpt == null) {
+    final newCodeBlockCode = args['diff-with'] == null
+        ? _getExcerpt(infoPath, info.region)
+        : r'''--- 0-base/basic.dart	2017-08-30 07:49:24.000000000 -0400
++++ 1-step/basic.dart	2017-08-30 07:48:18.000000000 -0400
+@@ -1,4 +1,4 @@
+-var _greeting = 'hello';
++var _greeting = 'bonjour';
+ var _scope = 'world';
+ 
+ void main() => print('$_greeting $_scope');'''
+            .split(_eol);
+    _log.finer('>>> new code block code: $newCodeBlockCode');
+    if (newCodeBlockCode == null) {
       // Error has been reported. Return while leaving existing code.
       // We could skip ahead to the end of the code block but that
       // will be handled by the outer loop.
@@ -162,7 +157,7 @@ class Updater {
       if (match == null) {
         // TODO: it would be nice if we could print a line number too.
         _reportError('unterminated markdown code block '
-            'for <?code-excerpt "$pathToCodeExcerpt"?>');
+            'for <?code-excerpt "$infoPath"?>');
         return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
       } else if (match[2] != null) {
         // We've found the closing code-block marker.
@@ -175,13 +170,13 @@ class Updater {
     }
     if (closingCodeBlockLine == null) {
       _reportError('unterminated markdown code block '
-          'for <?code-excerpt "$pathToCodeExcerpt"?>');
+          'for <?code-excerpt "$infoPath"?>');
       return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
     }
     _numSrcDirectives++;
     final linePrefix = info.linePrefix;
     final indentation = ' ' * getIndentBy(args['indent-by']);
-    final prefixedCodeExcerpt = newCodeExcerpt.map((line) {
+    final prefixedCodeExcerpt = newCodeBlockCode.map((line) {
       final _line =
           '$linePrefix$indentation$line'.replaceFirst(new RegExp(r'\s+$'), '');
       return this.escapeNgInterpolation
