@@ -9,12 +9,15 @@ Jade (`.jade`) files are processed. For Dart source files, code blocks in API co
 ```
 Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
--p, --fragment-dir-path               Path to the directory containing code fragment files
+-p, --fragment-dir-path               Path to directory containing code fragment files
                                       (defaults to "", that is, the current working directory)
 
 -h, --help                            Show command help
 -i, --indentation                     Default number of spaces to use as indentation for code inside code blocks
                                       (defaults to "0")
+
+-q, --src-dir-path                    Path to directory containing code used in diffs
+                                      (defaults to "", that is, the current working directory)
 
 -w, --write-in-place                  Write updates to files in-place
     --[no-]escape-ng-interpolation    Escape Angular interpolation syntax {{...}} as {!{...}!}
@@ -22,9 +25,9 @@ Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 ```
 
 For example, you can run the updater over 
-[AngularDart](https://github.com/dart-lang/angular2) sources as follows:
+[AngularDart](https://github.com/dart-lang/angular) sources as follows:
 
-`angular2> dart ../code_excerpt_updater/bin/code_excerpt_updater.dart -p ../site-webdev/tmp/_fragments/_api -w lib`
+`> dart ../code_excerpt_updater/bin/code_excerpt_updater.dart -p ../site-webdev/tmp/_fragments/_api -w lib`
 
 ## `<?code-excerpt?>` syntax
 
@@ -96,7 +99,7 @@ will be updated to
 ## Example
 
 Consider the following API doc excerpt from the
-[NgStyle](https://webdev.dartlang.org/angular/api/angular2.common/NgStyle-class) class.
+[NgStyle](https://webdev.dartlang.org/api/angular/angular.common/NgStyle-class) class.
 
 ```dart
     /// ### Examples

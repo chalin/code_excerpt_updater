@@ -17,15 +17,16 @@ Function _listEq = const ListEquality().equals;
 ///
 /// Returns, as a string, a version of the given file source, with the
 /// `<?code-excerpt...?>` code fragments updated. Fragments are read from the
-/// [fragmentDirPath] directory.
+/// [fragmentDirPath] directory, and diff sources from [srcDirPath].
 class Updater {
   final Logger _log = new Logger('CEU');
   final Stdout _stderr;
   final String fragmentDirPath;
+  final String srcDirPath;
   final int defaultIndentation;
   final bool escapeNgInterpolation;
 
-  String _fragmentSubdir = ''; // init from <?code-excerpt path-base="..."?>
+  String _pathBase = ''; // init from <?code-excerpt path-base="..."?>
 
   String _filePath = '';
   int _origNumLines = 0;
@@ -34,7 +35,7 @@ class Updater {
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
   /// [err] defaults to [_stderr].
-  Updater(this.fragmentDirPath,
+  Updater(this.fragmentDirPath, this.srcDirPath,
       {this.defaultIndentation = 0,
       this.escapeNgInterpolation = true,
       Stdout err})
@@ -59,7 +60,7 @@ class Updater {
   }
 
   String _updateSrc(String dartSource) {
-    _fragmentSubdir = '';
+    _pathBase = '';
     _lines = dartSource.split(_eol);
     _origNumLines = _lines.length;
     return _processLines();
@@ -94,6 +95,8 @@ class Updater {
 
       if (info.unnamedArg == null) {
         _processSetPath(info);
+      } else if (info.args['diff-with'] != null) {
+        print('Case for code diff');
       } else {
         output.addAll(_getUpdatedCodeBlock(info));
       }
@@ -111,7 +114,7 @@ class Updater {
         _warn('instruction ignored: ${info.instruction}');
       }
     } else {
-      _fragmentSubdir = info.args['path-base'];
+      _pathBase = info.args['path-base'];
       if (info.args.keys.length > 1) {
         _reportError(
             '"path-base" should be the only argument in the instruction:  ${info.instruction}');
@@ -311,7 +314,7 @@ class Updater {
       file = p.join(dir, '$basename-$region$ext$fragExtension');
     }
 
-    final String fullPath = p.join(fragmentDirPath, _fragmentSubdir, file);
+    final String fullPath = p.join(fragmentDirPath, _pathBase, file);
     try {
       final result = new File(fullPath).readAsStringSync().split(_eol);
       // All excerpts are [_eol] terminated, so drop trailing blank lines

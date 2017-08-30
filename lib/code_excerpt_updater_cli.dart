@@ -17,18 +17,23 @@ class UpdaterCLI {
   static final _fragmentDirPathFlagName = 'fragment-dir-path';
   static final _inPlaceFlagName = 'write-in-place';
   static final _indentFlagName = 'indentation';
+  static final _srcDirPathFlagName = 'src-dir-path';
+  static final _defaultPath =
+      '(defaults to "", that is, the current working directory)';
 
   final _parser = new ArgParser()
     ..addOption(_fragmentDirPathFlagName,
         abbr: 'p',
-        help: 'Path to the directory containing code fragment files\n'
-            '(defaults to "", that is, the current working directory)')
+        help: 'Path to directory containing code fragment files\n$_defaultPath')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help')
     ..addOption(_indentFlagName,
         abbr: 'i',
         defaultsTo: "0",
         help:
             'Default number of spaces to use as indentation for code inside code blocks')
+    ..addOption(_srcDirPathFlagName,
+        abbr: 'q',
+        help: 'Path to directory containing code used in diffs\n$_defaultPath')
     ..addFlag(_inPlaceFlagName,
         abbr: 'w',
         defaultsTo: false,
@@ -39,7 +44,7 @@ class UpdaterCLI {
         help: 'Escape Angular interpolation syntax {{...}} as {!{...}!}');
 
   bool escapeNgInterpolation;
-  String fragmentDirPath;
+  String fragmentDirPath, srcDirPath;
   bool inPlaceFlag;
   int indentation;
   List<String> pathsToFileOrDir = [];
@@ -80,6 +85,8 @@ class UpdaterCLI {
     escapeNgInterpolation = args[_escapeNgInterpolationFlagName];
     fragmentDirPath = args[_fragmentDirPathFlagName] ?? '';
     inPlaceFlag = args[_inPlaceFlagName];
+    srcDirPath = args[_srcDirPathFlagName] ?? '';
+
     argsAreValid = true;
   }
 
@@ -133,7 +140,7 @@ class UpdaterCLI {
   }
 
   Future _updateFile(String filePath) async {
-    final updater = new Updater(fragmentDirPath,
+    final updater = new Updater(fragmentDirPath, srcDirPath,
         defaultIndentation: indentation,
         escapeNgInterpolation: escapeNgInterpolation);
     final result = updater.generateUpdatedFile(filePath);
