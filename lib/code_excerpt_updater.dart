@@ -134,15 +134,7 @@ class Updater {
 
     final newCodeBlockCode = args['diff-with'] == null
         ? _getExcerpt(infoPath, info.region)
-        : r'''--- 0-base/basic.dart	2017-08-30 07:49:24.000000000 -0400
-+++ 1-step/basic.dart	2017-08-30 07:48:18.000000000 -0400
-@@ -1,4 +1,4 @@
--var _greeting = 'hello';
-+var _greeting = 'bonjour';
- var _scope = 'world';
- 
- void main() => print('$_greeting $_scope');'''
-            .split(_eol);
+        : _getDiff(infoPath, args['diff-with']);
     _log.finer('>>> new code block code: $newCodeBlockCode');
     if (newCodeBlockCode == null) {
       // Error has been reported. Return while leaving existing code.
@@ -252,6 +244,42 @@ class Updater {
     if (errorMsg.isNotEmpty) {
       _reportError('<?code-excerpt?> indent-by: $errorMsg');
     }
+    return result;
+  }
+
+  final diffFileIdRegEx = new RegExp(r'^(---|\+\+\+) ([^\t]+)\t(.*)$');
+
+  /*@nullable*/
+  Iterable<String> _getDiff(String relativeSrcPath1, String relativeSrcPath2) {
+    final pathPrefix = p.join(srcDirPath, _pathBase);
+    final path1 = p.join(pathPrefix, relativeSrcPath1);
+    final path2 = p.join(pathPrefix, relativeSrcPath2);
+    final r = Process.runSync('diff', ['-u', path1, path2]);
+    if (r.exitCode > 1) {
+      _reportError(r.stderr);
+      return null;
+    }
+    String diff = r.stdout; // .split(_eol);
+    final result = diff.replaceAll('$pathPrefix/', '').split(_eol);
+    while (result.length > 0 && result.last == '') result.removeLast();
+    for(var i = 0; i < result.length; i++) {
+      final line = result[i];
+      final match = diffFileIdRegEx.firstMatch(line);
+      if (match == null) continue;
+      String path = match[2];
+      if (path.startsWith(pathPrefix)) path = path.substring(pathPrefix.length);
+      result[i] = '${match[1]} $path'; // Drop timestamp
+    }
+    final result1 =
+        r'''--- 0-base/basic.dart	2017-08-30 07:49:24.000000000 -0400
++++ 1-step/basic.dart	2017-08-30 07:48:18.000000000 -0400
+@@ -1,4 +1,4 @@
+-var _greeting = 'hello';
++var _greeting = 'bonjour';
+ var _scope = 'world';
+ 
+ void main() => print('$_greeting $_scope');'''
+            .split(_eol);
     return result;
   }
 
