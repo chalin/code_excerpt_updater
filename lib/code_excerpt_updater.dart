@@ -167,7 +167,9 @@ class Updater {
     }
     _numSrcDirectives++;
     final linePrefix = info.linePrefix;
-    final indentation = ' ' * getIndentBy(args['indent-by']);
+    final indentBy =
+        args['diff-with'] == null ? getIndentBy(args['indent-by']) : 0;
+    final indentation = ' ' * indentBy;
     final prefixedCodeExcerpt = newCodeBlockCode.map((line) {
       final _line =
           '$linePrefix$indentation$line'.replaceFirst(new RegExp(r'\s+$'), '');
@@ -247,8 +249,6 @@ class Updater {
     return result;
   }
 
-  final diffFileIdRegEx = new RegExp(r'^(---|\+\+\+) ([^\t]+)\t(.*)$');
-
   /*@nullable*/
   Iterable<String> _getDiff(String relativeSrcPath1, String relativeSrcPath2) {
     final pathPrefix = p.join(srcDirPath, _pathBase);
@@ -259,28 +259,51 @@ class Updater {
       _reportError(r.stderr);
       return null;
     }
-    String diff = r.stdout; // .split(_eol);
-    final result = diff.replaceAll('$pathPrefix/', '').split(_eol);
+    if (r.stdout.isEmpty) return []; // no differences between files
+
+    /* Sample diff output:
+    --- examples/acx/lottery/1-base/lib/lottery_simulator.html	2017-08-25 07:45:24.000000000 -0400
+    +++ examples/acx/lottery/2-starteasy/lib/lottery_simulator.html	2017-08-25 07:45:24.000000000 -0400
+    @@ -23,35 +23,39 @@
+         <div class="clear-floats"></div>
+       </div>
+
+    -  Progress: <strong>{{progress}}%</strong> <br>
+    -  <progress max="100" [value]="progress"></progress>
+    +  <material-progress  [activeProgress]="progress" class="life-progress">
+    +  </material-progress>
+
+       <div class="controls">
+    ...
+    */
+
+    final result = r.stdout.split(_eol);
+    
+    // Trim trailing blank lines
     while (result.length > 0 && result.last == '') result.removeLast();
-    for(var i = 0; i < result.length; i++) {
-      final line = result[i];
-      final match = diffFileIdRegEx.firstMatch(line);
-      if (match == null) continue;
-      String path = match[2];
-      if (path.startsWith(pathPrefix)) path = path.substring(pathPrefix.length);
-      result[i] = '${match[1]} $path'; // Drop timestamp
-    }
-    final result1 =
-        r'''--- 0-base/basic.dart	2017-08-30 07:49:24.000000000 -0400
-+++ 1-step/basic.dart	2017-08-30 07:48:18.000000000 -0400
-@@ -1,4 +1,4 @@
--var _greeting = 'hello';
-+var _greeting = 'bonjour';
- var _scope = 'world';
- 
- void main() => print('$_greeting $_scope');'''
-            .split(_eol);
+
+    // Fix file id lines by removing:
+    // - [pathPrefix] from the start of the file paths so that paths are relative
+    // - timestamp (because file timestamps are not relevant in the git world)
+    result[0] = _adjustDiffFileIdLine(pathPrefix, result[0]);
+    result[1] = _adjustDiffFileIdLine(pathPrefix, result[1]);
+
     return result;
+  }
+
+  final _diffFileIdRegEx = new RegExp(r'^(---|\+\+\+) ([^\t]+)\t(.*)$');
+
+  String _adjustDiffFileIdLine(String pathPrefix, String diffFileIdLine) {
+    final line = diffFileIdLine;
+    final match = _diffFileIdRegEx.firstMatch(line);
+    if (match == null) {
+      _log.warning('Warning: unexpected file Id line: $diffFileIdLine');
+      return diffFileIdLine;
+    }
+    String path = match[2];
+    pathPrefix += p.separator;
+    if (path.startsWith(pathPrefix)) path = path.substring(pathPrefix.length);
+    return '${match[1]} $path';
   }
 
   /*@nullable*/

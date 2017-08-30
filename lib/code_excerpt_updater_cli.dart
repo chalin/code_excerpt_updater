@@ -115,6 +115,8 @@ class UpdaterCLI {
     }
   }
 
+  final _dotPubPathRe = new RegExp(r'(^|/).pub($|/)');
+
   /// Process (recursively) the entities in the directory [path], ignoring
   /// non-Dart and non-directory entities.
   Future _processDirectory(String path) async {
@@ -122,6 +124,7 @@ class UpdaterCLI {
     final entityList = dir.list(recursive: true, followLinks: false);
     await for (FileSystemEntity entity in entityList) {
       final filePath = entity.path;
+      if (filePath.contains(_dotPubPathRe)) continue;
       if (!_validExt.hasMatch(filePath)) continue;
       // Not testing for entity type as it is almost certainly a file. Only warn
       // about files with invalid extensions when explicitly listed on cmd line.

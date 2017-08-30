@@ -141,6 +141,8 @@ void testDefaultIndentation() {
         defaultIndentation: 2, err: _stderr);
   });
 
+  // Diffs are unaffected by the indentation setting.
+  _stdFileTest(p.join('no_change', 'basic_diff.dart'));
   _stdFileTest('basic_with_region.jade');
 }
 
