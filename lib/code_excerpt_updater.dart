@@ -85,10 +85,11 @@ class Updater {
 
       if (info.unnamedArg == null) {
         _processSetPath(info);
-      } else if (info.args['diff-with'] != null) {
-        print('Case for code diff');
       } else {
-        output.addAll(_getUpdatedCodeBlock(info));
+        var updatedBlock = info.args['diff-with'] == null
+            ? _getUpdatedCodeBlock(info)
+            : _getUpdatedDiffCodeBlock(info);
+        output.addAll(updatedBlock);
       }
     }
     return output.join(_eol);
@@ -110,6 +111,17 @@ class Updater {
             '"path-base" should be the only argument in the instruction:  ${info.instruction}');
       }
     }
+  }
+
+  /// Expects the next lines to be a markdown code block.
+  /// Side-effect: consumes code-block lines.
+  Iterable<String> _getUpdatedDiffCodeBlock(InstrInfo info) {
+    final args = info.args;
+    final pathToSrc1 = info.path;
+    final pathToSrc2 = args['diff-with'];
+
+    print('Diff $pathToSrc1 $pathToSrc2');
+    return [];
   }
 
   /// Expects the next lines to be a markdown code block.
