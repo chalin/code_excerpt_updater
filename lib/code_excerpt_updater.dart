@@ -316,8 +316,8 @@ class Updater {
       return diffFileIdLine;
     }
     String path = match[2];
-    pathPrefix += p.separator;
-    if (path.startsWith(pathPrefix)) path = path.substring(pathPrefix.length);
+    final pp = pathPrefix + p.separator;
+    if (path.startsWith(pp)) path = path.substring(pp.length);
     return '${match[1]} $path';
   }
 
