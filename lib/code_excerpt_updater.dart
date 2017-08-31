@@ -134,7 +134,7 @@ class Updater {
 
     final newCodeBlockCode = args['diff-with'] == null
         ? _getExcerpt(infoPath, info.region)
-        : _getDiff(infoPath, args['diff-with']);
+        : _getDiff(infoPath, args);
     _log.finer('>>> new code block code: $newCodeBlockCode');
     if (newCodeBlockCode == null) {
       // Error has been reported. Return while leaving existing code.
@@ -250,7 +250,8 @@ class Updater {
   }
 
   /*@nullable*/
-  Iterable<String> _getDiff(String relativeSrcPath1, String relativeSrcPath2) {
+  Iterable<String> _getDiff(String relativeSrcPath1, Map<String, String> args) {
+    final relativeSrcPath2 = args['diff-with'];
     final pathPrefix = p.join(srcDirPath, _pathBase);
     final path1 = p.join(pathPrefix, relativeSrcPath1);
     final path2 = p.join(pathPrefix, relativeSrcPath2);
@@ -277,8 +278,8 @@ class Updater {
     ...
     */
 
-    final result = r.stdout.split(_eol);
-    
+    List<String> result = r.stdout.split(_eol);
+
     // Trim trailing blank lines
     while (result.length > 0 && result.last == '') result.removeLast();
 
@@ -288,6 +289,20 @@ class Updater {
     result[0] = _adjustDiffFileIdLine(pathPrefix, result[0]);
     result[1] = _adjustDiffFileIdLine(pathPrefix, result[1]);
 
+    // Only return diff until 'to' pattern, if given
+    final to = args['to'];
+    if (to != null) {
+      var foundIndex = -1;
+      final toRe = new RegExp(to);
+      for (var i = 0; i < result.length; i++) {
+        if (!toRe.hasMatch(result[i])) continue;
+        foundIndex = i;
+        break;
+      }
+      if (foundIndex > -1) {
+        result = result.getRange(0, foundIndex + 1).toList();
+      }
+    }
     return result;
   }
 

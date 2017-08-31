@@ -17,3 +17,13 @@ class C {}
 /// ```diff
 /// ```
 class D {}
+
+/// <?code-excerpt "0-base/basic.dart" diff-with="1-step/basic.dart" to="\+var"?>
+/// ```diff
+/// --- 0-base/basic.dart
+/// +++ 1-step/basic.dart
+/// @@ -1,4 +1,4 @@
+/// -var _greeting = 'hello';
+/// +var _greeting = 'bonjour';
+/// ```
+class E {}
