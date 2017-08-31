@@ -289,21 +289,25 @@ class Updater {
     result[0] = _adjustDiffFileIdLine(pathPrefix, result[0]);
     result[1] = _adjustDiffFileIdLine(pathPrefix, result[1]);
 
+    final from = args['from'], to = args['to'];
+    // TODO: trim diff output to contain only lines between those that (first)
+    // match `from` and `to`. For now we only trim after `to`.
     // Only return diff until 'to' pattern, if given
-    final to = args['to'];
+    final startingIdx =
+        from == null ? 0 : _indexOfFirstMatch(result, 2, new RegExp(from));
     if (to != null) {
-      var foundIndex = -1;
-      final toRe = new RegExp(to);
-      for (var i = 0; i < result.length; i++) {
-        if (!toRe.hasMatch(result[i])) continue;
-        foundIndex = i;
-        break;
-      }
-      if (foundIndex > -1) {
-        result = result.getRange(0, foundIndex + 1).toList();
+      var lastIdx = _indexOfFirstMatch(result, startingIdx, new RegExp(to));
+      if (lastIdx < result.length) {
+        result = result.getRange(0, lastIdx + 1).toList();
       }
     }
     return result;
+  }
+
+  int _indexOfFirstMatch(List a, int startingIdx, RegExp re) {
+    var i = startingIdx;
+    while (i < a.length && !re.hasMatch(a[i])) i++;
+    return i;
   }
 
   final _diffFileIdRegEx = new RegExp(r'^(---|\+\+\+) ([^\t]+)\t(.*)$');
