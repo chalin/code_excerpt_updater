@@ -17,15 +17,16 @@ Function _listEq = const ListEquality().equals;
 ///
 /// Returns, as a string, a version of the given file source, with the
 /// `<?code-excerpt...?>` code fragments updated. Fragments are read from the
-/// [fragmentDirPath] directory.
+/// [fragmentDirPath] directory, and diff sources from [srcDirPath].
 class Updater {
   final Logger _log = new Logger('CEU');
   final Stdout _stderr;
   final String fragmentDirPath;
+  final String srcDirPath;
   final int defaultIndentation;
   final bool escapeNgInterpolation;
 
-  String _fragmentSubdir = ''; // init from <?code-excerpt path-base="..."?>
+  String _pathBase = ''; // init from <?code-excerpt path-base="..."?>
 
   String _filePath = '';
   int _origNumLines = 0;
@@ -34,7 +35,7 @@ class Updater {
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
   /// [err] defaults to [_stderr].
-  Updater(this.fragmentDirPath,
+  Updater(this.fragmentDirPath, this.srcDirPath,
       {this.defaultIndentation = 0,
       this.escapeNgInterpolation = true,
       Stdout err})
@@ -59,7 +60,7 @@ class Updater {
   }
 
   String _updateSrc(String dartSource) {
-    _fragmentSubdir = '';
+    _pathBase = '';
     _lines = dartSource.split(_eol);
     _origNumLines = _lines.length;
     return _processLines();
@@ -69,23 +70,13 @@ class Updater {
   final RegExp procInstrRE = new RegExp(
       r'^(\s*(///?\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+(\s*=\s*"[^"]*")?\s*)*)\??>');
 
-  /// Regex matching @source lines
-  final RegExp sourceRE = new RegExp(
-      r'^(///\s*)((<!--|///?)\s*)?{@source\s+"([^"}]+)"((\s+region=")([^"}]+)"\s*)?}');
-
   String _processLines() {
     final List<String> output = [];
     while (_lines.isNotEmpty) {
       final line = _lines.removeAt(0);
       output.add(line);
-      // Deprecated support for old @source syntax
-      var match = sourceRE.firstMatch(line);
-      if (match != null) {
-        output.addAll(_getUpdatedAtSourceCodeBlock(match));
-        continue;
-      }
       if (!line.contains('<?code-excerpt')) continue;
-      match = procInstrRE.firstMatch(line);
+      final match = procInstrRE.firstMatch(line);
       if (match == null) {
         _reportError('invalid processing instruction: $line');
         continue;
@@ -111,7 +102,7 @@ class Updater {
         _warn('instruction ignored: ${info.instruction}');
       }
     } else {
-      _fragmentSubdir = info.args['path-base'];
+      _pathBase = info.args['path-base'];
       if (info.args.keys.length > 1) {
         _reportError(
             '"path-base" should be the only argument in the instruction:  ${info.instruction}');
@@ -123,14 +114,13 @@ class Updater {
   /// Side-effect: consumes code-block lines.
   Iterable<String> _getUpdatedCodeBlock(InstrInfo info) {
     final args = info.args;
-    final pathToCodeExcerpt = info.path;
+    final infoPath = info.path;
 
     // TODO: only match on same prefix.
     final codeBlockMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
     final currentCodeBlock = <String>[];
     if (_lines.isEmpty) {
-      _reportError(
-          'reached end of input, expect code block - "$pathToCodeExcerpt"');
+      _reportError('reached end of input, expect code block - "$infoPath"');
       return currentCodeBlock;
     }
     var line = _lines.removeAt(0);
@@ -138,13 +128,15 @@ class Updater {
     final firstLineMatch = codeBlockMarker.firstMatch(line);
     if (firstLineMatch == null || firstLineMatch[2] == null) {
       _reportError('code block should immediately follow <?code-excerpt?> - '
-          '"$pathToCodeExcerpt"\n  not: $line');
+          '"$infoPath"\n  not: $line');
       return <String>[openingCodeBlockLine];
     }
 
-    final newCodeExcerpt = _getExcerpt(pathToCodeExcerpt, info.region);
-    _log.finer('>>> got new excerpt: $newCodeExcerpt');
-    if (newCodeExcerpt == null) {
+    final newCodeBlockCode = args['diff-with'] == null
+        ? _getExcerpt(infoPath, info.region)
+        : _getDiff(infoPath, args);
+    _log.finer('>>> new code block code: $newCodeBlockCode');
+    if (newCodeBlockCode == null) {
       // Error has been reported. Return while leaving existing code.
       // We could skip ahead to the end of the code block but that
       // will be handled by the outer loop.
@@ -157,7 +149,7 @@ class Updater {
       if (match == null) {
         // TODO: it would be nice if we could print a line number too.
         _reportError('unterminated markdown code block '
-            'for <?code-excerpt "$pathToCodeExcerpt"?>');
+            'for <?code-excerpt "$infoPath"?>');
         return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
       } else if (match[2] != null) {
         // We've found the closing code-block marker.
@@ -170,13 +162,15 @@ class Updater {
     }
     if (closingCodeBlockLine == null) {
       _reportError('unterminated markdown code block '
-          'for <?code-excerpt "$pathToCodeExcerpt"?>');
+          'for <?code-excerpt "$infoPath"?>');
       return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
     }
     _numSrcDirectives++;
     final linePrefix = info.linePrefix;
-    final indentation = ' ' * getIndentBy(args['indent-by']);
-    final prefixedCodeExcerpt = newCodeExcerpt.map((line) {
+    final indentBy =
+        args['diff-with'] == null ? getIndentBy(args['indent-by']) : 0;
+    final indentation = ' ' * indentBy;
+    final prefixedCodeExcerpt = newCodeBlockCode.map((line) {
       final _line =
           '$linePrefix$indentation$line'.replaceFirst(new RegExp(r'\s+$'), '');
       return this.escapeNgInterpolation
@@ -255,49 +249,80 @@ class Updater {
     return result;
   }
 
-  @deprecated
-
-  /// Side-effect: consumes code-block lines of [_lines].
-  Iterable<String> _getUpdatedAtSourceCodeBlock(Match match) {
-    var i = 1;
-    final linePrefix = match[i++];
-    i++; // final commentTokenWithSapce = match[i++];
-    i++; // final commentTokenWith = match[i++];
-    final relativePath = match[i++];
-    i++; // final regionArgWithSpaceAndArg = match[i++]; // e.g., '  region="abc"  '
-    i++; // final regionArgWithSpace = match[i++]; // e.g., '  region='
-    final region = match[i++] ?? ''; // e.g., 'abc'
-
-    final newCodeExcerpt = _getExcerpt(relativePath, region);
-    if (newCodeExcerpt == null) {
-      // Error has been reported. Return while leaving existing code.
-      // We could skip ahead to the end of the code block but that
-      // will be handled by the outer loop.
-      return <String>[];
+  /*@nullable*/
+  Iterable<String> _getDiff(String relativeSrcPath1, Map<String, String> args) {
+    final relativeSrcPath2 = args['diff-with'];
+    final pathPrefix = p.join(srcDirPath, _pathBase);
+    final path1 = p.join(pathPrefix, relativeSrcPath1);
+    final path2 = p.join(pathPrefix, relativeSrcPath2);
+    final r = Process.runSync('diff', ['-u', path1, path2]);
+    if (r.exitCode > 1) {
+      _reportError(r.stderr);
+      return null;
     }
-    var line;
-    final currentCodeBlock = <String>[];
-    final publicApiRegEx = new RegExp(r'^///\s*(```)?');
-    while (_lines.isNotEmpty) {
-      line = _lines[0];
-      final match = publicApiRegEx.firstMatch(line);
-      if (match == null) {
-        // TODO: it would be nice if we could print a line number too.
-        _reportError(
-            'unterminated markdown code block for @source "$relativePath"');
-        return <String>[];
-      } else if (match[1] != null) {
-        // We've found the closing code-block marker.
-        break;
+    if (r.stdout.isEmpty) return []; // no differences between files
+
+    /* Sample diff output:
+    --- examples/acx/lottery/1-base/lib/lottery_simulator.html	2017-08-25 07:45:24.000000000 -0400
+    +++ examples/acx/lottery/2-starteasy/lib/lottery_simulator.html	2017-08-25 07:45:24.000000000 -0400
+    @@ -23,35 +23,39 @@
+         <div class="clear-floats"></div>
+       </div>
+
+    -  Progress: <strong>{{progress}}%</strong> <br>
+    -  <progress max="100" [value]="progress"></progress>
+    +  <material-progress  [activeProgress]="progress" class="life-progress">
+    +  </material-progress>
+
+       <div class="controls">
+    ...
+    */
+
+    List<String> result = r.stdout.split(_eol);
+
+    // Trim trailing blank lines
+    while (result.length > 0 && result.last == '') result.removeLast();
+
+    // Fix file id lines by removing:
+    // - [pathPrefix] from the start of the file paths so that paths are relative
+    // - timestamp (because file timestamps are not relevant in the git world)
+    result[0] = _adjustDiffFileIdLine(pathPrefix, result[0]);
+    result[1] = _adjustDiffFileIdLine(pathPrefix, result[1]);
+
+    final from = args['from'], to = args['to'];
+    // TODO: trim diff output to contain only lines between those that (first)
+    // match `from` and `to`. For now we only trim after `to`.
+    // Only return diff until 'to' pattern, if given
+    final startingIdx =
+        from == null ? 0 : _indexOfFirstMatch(result, 2, new RegExp(from));
+    if (to != null) {
+      var lastIdx = _indexOfFirstMatch(result, startingIdx, new RegExp(to));
+      if (lastIdx < result.length) {
+        result = result.getRange(0, lastIdx + 1).toList();
       }
-      currentCodeBlock.add(line);
-      _lines.removeAt(0);
     }
-    _numSrcDirectives++;
-    final prefixedCodeExcerpt =
-        newCodeExcerpt.map((line) => '$linePrefix$line'.trim()).toList();
-    if (!_listEq(currentCodeBlock, prefixedCodeExcerpt)) _numUpdatedFrag++;
-    return prefixedCodeExcerpt;
+    return result;
+  }
+
+  int _indexOfFirstMatch(List a, int startingIdx, RegExp re) {
+    var i = startingIdx;
+    while (i < a.length && !re.hasMatch(a[i])) i++;
+    return i;
+  }
+
+  final _diffFileIdRegEx = new RegExp(r'^(---|\+\+\+) ([^\t]+)\t(.*)$');
+
+  String _adjustDiffFileIdLine(String pathPrefix, String diffFileIdLine) {
+    final line = diffFileIdLine;
+    final match = _diffFileIdRegEx.firstMatch(line);
+    if (match == null) {
+      _log.warning('Warning: unexpected file Id line: $diffFileIdLine');
+      return diffFileIdLine;
+    }
+    String path = match[2];
+    final pp = pathPrefix + p.separator;
+    if (path.startsWith(pp)) path = path.substring(pp.length);
+    return '${match[1]} $path';
   }
 
   /*@nullable*/
@@ -311,7 +336,7 @@ class Updater {
       file = p.join(dir, '$basename-$region$ext$fragExtension');
     }
 
-    final String fullPath = p.join(fragmentDirPath, _fragmentSubdir, file);
+    final String fullPath = p.join(fragmentDirPath, _pathBase, file);
     try {
       final result = new File(fullPath).readAsStringSync().split(_eol);
       // All excerpts are [_eol] terminated, so drop trailing blank lines

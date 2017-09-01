@@ -17,18 +17,23 @@ class UpdaterCLI {
   static final _fragmentDirPathFlagName = 'fragment-dir-path';
   static final _inPlaceFlagName = 'write-in-place';
   static final _indentFlagName = 'indentation';
+  static final _srcDirPathFlagName = 'src-dir-path';
+  static final _defaultPath =
+      '(defaults to "", that is, the current working directory)';
 
   final _parser = new ArgParser()
     ..addOption(_fragmentDirPathFlagName,
         abbr: 'p',
-        help: 'Path to the directory containing code fragment files\n'
-            '(defaults to "", that is, the current working directory)')
+        help: 'Path to directory containing code fragment files\n$_defaultPath')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help')
     ..addOption(_indentFlagName,
         abbr: 'i',
         defaultsTo: "0",
         help:
             'Default number of spaces to use as indentation for code inside code blocks')
+    ..addOption(_srcDirPathFlagName,
+        abbr: 'q',
+        help: 'Path to directory containing code used in diffs\n$_defaultPath')
     ..addFlag(_inPlaceFlagName,
         abbr: 'w',
         defaultsTo: false,
@@ -39,7 +44,7 @@ class UpdaterCLI {
         help: 'Escape Angular interpolation syntax {{...}} as {!{...}!}');
 
   bool escapeNgInterpolation;
-  String fragmentDirPath;
+  String fragmentDirPath, srcDirPath;
   bool inPlaceFlag;
   int indentation;
   List<String> pathsToFileOrDir = [];
@@ -80,6 +85,8 @@ class UpdaterCLI {
     escapeNgInterpolation = args[_escapeNgInterpolationFlagName];
     fragmentDirPath = args[_fragmentDirPathFlagName] ?? '';
     inPlaceFlag = args[_inPlaceFlagName];
+    srcDirPath = args[_srcDirPathFlagName] ?? '';
+
     argsAreValid = true;
   }
 
@@ -108,6 +115,8 @@ class UpdaterCLI {
     }
   }
 
+  final _dotPubPathRe = new RegExp(r'(^|/).pub($|/)');
+
   /// Process (recursively) the entities in the directory [path], ignoring
   /// non-Dart and non-directory entities.
   Future _processDirectory(String path) async {
@@ -115,6 +124,7 @@ class UpdaterCLI {
     final entityList = dir.list(recursive: true, followLinks: false);
     await for (FileSystemEntity entity in entityList) {
       final filePath = entity.path;
+      if (filePath.contains(_dotPubPathRe)) continue;
       if (!_validExt.hasMatch(filePath)) continue;
       // Not testing for entity type as it is almost certainly a file. Only warn
       // about files with invalid extensions when explicitly listed on cmd line.
@@ -133,7 +143,7 @@ class UpdaterCLI {
   }
 
   Future _updateFile(String filePath) async {
-    final updater = new Updater(fragmentDirPath,
+    final updater = new Updater(fragmentDirPath, srcDirPath,
         defaultIndentation: indentation,
         escapeNgInterpolation: escapeNgInterpolation);
     final result = updater.generateUpdatedFile(filePath);

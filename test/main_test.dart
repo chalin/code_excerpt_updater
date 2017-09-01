@@ -77,13 +77,16 @@ void main() {
 void testsFromDefaultDir() {
   setUp(() {
     _stderr = new MockStderr();
-    updater = new Updater(p.join(_testDir, 'frag'), err: _stderr);
+    updater = new Updater(
+        p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
+        err: _stderr);
   });
 
   group('No change to doc;', () {
     setUp(() => clearInteractions(_stderr));
 
     final _testFileNames = [
+      'basic_diff.dart',
       'basic_no_region.dart',
       'basic_with_region.dart',
       'frag_not_found.dart',
@@ -124,7 +127,8 @@ void testsFromDefaultDir() {
 
 void testSetPath() {
   setUp(() {
-    updater = new Updater(p.join(_testDir, ''), err: _stderr);
+    updater =
+        new Updater(p.join(_testDir, ''), p.join(_testDir, ''), err: _stderr);
   });
 
   _stdFileTest('set_path.md');
@@ -132,17 +136,21 @@ void testSetPath() {
 
 void testDefaultIndentation() {
   setUp(() {
-    updater = new Updater(p.join(_testDir, 'frag'),
+    updater = new Updater(
+        p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
         defaultIndentation: 2, err: _stderr);
   });
 
+  // Diffs are unaffected by the indentation setting.
+  _stdFileTest(p.join('no_change', 'basic_diff.dart'));
   _stdFileTest('basic_with_region.jade');
 }
 
 void testNoEscapeNgInterpolation() {
   setUp(() {
-    updater =
-        new Updater(p.join(_testDir, 'frag'), escapeNgInterpolation: false);
+    updater = new Updater(
+        p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
+        escapeNgInterpolation: false);
   });
 
   _stdFileTest('no_escape_ng_interpolation.md');

@@ -4,31 +4,45 @@ This is the repo for a simple _line-based_ updater for markdown code-blocks prec
 processor instructions of the form `<?code-excerpt ...?>`. Dart (`.dart'), markdown (`.md`), and 
 Jade (`.jade`) files are processed. For Dart source files, code blocks in API comments are updated.
 
-## Usage
+## 1. Installation
+
+```shell
+pub global activate --source git https://github.com/chalin/code_excerpt_updater.git
+```
+
+## 2. Usage
 
 ```
 Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
--p, --fragment-dir-path               Path to the directory containing code fragment files
+-p, --fragment-dir-path               Path to directory containing code fragment files
                                       (defaults to "", that is, the current working directory)
 
 -h, --help                            Show command help
 -i, --indentation                     Default number of spaces to use as indentation for code inside code blocks
                                       (defaults to "0")
 
+-q, --src-dir-path                    Path to directory containing code used in diffs
+                                      (defaults to "", that is, the current working directory)
+
 -w, --write-in-place                  Write updates to files in-place
     --[no-]escape-ng-interpolation    Escape Angular interpolation syntax {{...}} as {!{...}!}
                                       (defaults to on)
 ```
 
-For example, you can run the updater over 
-[AngularDart](https://github.com/dart-lang/angular2) sources as follows:
+For example, you could run the updater over
+[AngularDart](https://github.com/dart-lang/angular) sources as follows:
 
-`angular2> dart ../code_excerpt_updater/bin/code_excerpt_updater.dart -p ../site-webdev/tmp/_fragments/_api -w lib`
+```shell
+> cd ~/git/angular/angular
+> pub global run code_excerpt_updater --fragment-dir-path ~/git/site-webdev/tmp/_fragments/_api -w lib`
+```
 
-## `<?code-excerpt?>` syntax
+## 3. `<?code-excerpt?>` syntax
 
-The instruction comes in two forms. The first (and most common) form must immediately precede a markdown code block:
+### a. Code fragment
+
+The instruction comes in three forms. The first (and most common) form must immediately precede a markdown code block:
 
 
     <?code-excerpt "path/file.ext (optional-region-name)" arg0="value0" ...?>
@@ -36,8 +50,8 @@ The instruction comes in two forms. The first (and most common) form must immedi
       ...
     ```
 
-The first (unnamed) argument defines a path to a fragment file. The argument can optionally
-name a code fragment region&mdash;any non-word character sequences (`\w+`) in the region name are converted to a hyphen.
+The first (unnamed) argument defines a path to a fragment file. The argument can optionally name a code fragment region
+&mdash; any non-word character sequences (`\w+`) in the region name are converted to a hyphen.
 
 Recognized arguments are:
 - `region`, a code fragment region name.
@@ -50,7 +64,22 @@ Notes:
   token. Namely either `//` or `///`.
 - Path, and arguments if given, must be enclosed in double quotes.
 
-The second form of the instruction is:
+### b. Code diff
+
+The second form of the instruction
+
+    <?code-excerpt "path/file.ext" diff-with="path2/file2.ext2" from="regex" to="regex"?>
+    ```
+      ...
+    ```
+
+must also be followed by a code block. When the code_excerpt_updater is run, it will update the content of the code
+block with the output of `diff -u path/file.ext path2/file2.ext2` truncated at the first diff output line that
+matches the `to` regular expression. The `from` attribute is currently ignored. Both `from` and `to` are optional.
+
+### c. Path-base
+
+The final form of the instruction is:
 
 ```
 <?code-excerpt path-base="subdirPath"?>
@@ -58,7 +87,12 @@ The second form of the instruction is:
 
 Following this instruction, the paths to file fragments will be interpreted relative to the `path-base` argument.
 
-## Code fragment updating
+### Limitations
+
+XML processing instructions cannot contain `>`. In particular this means that attribute values cannot contain `>`,
+which is a limitation for the diff `from` and `to` regular expressions.
+
+## 4. Code fragment updating details
 
 The updater does not create code fragment files. It does expect such files to 
 exist and be named following the conventions described below.
@@ -93,10 +127,10 @@ will be updated to
 /// ```
 ```
 
-## Example
+## 5. Example
 
 Consider the following API doc excerpt from the
-[NgStyle](https://webdev.dartlang.org/angular/api/angular2.common/NgStyle-class) class.
+[NgStyle](https://webdev.dartlang.org/api/angular/angular.common/NgStyle-class) class.
 
 ```dart
     /// ### Examples
@@ -154,6 +188,6 @@ update tool would generate:
     /// ```
 ```
 
-## Tests
+## 6. Tests
 
 Repo tests can be launched from `test/main.dart`.
