@@ -28,10 +28,8 @@ String getExpected(String relPath) => _readFile(_expectedFn2Path(relPath));
 final _errMsgs = {
   'no_change/frag_not_found.dart':
       'Error: test_data/src/no_change/frag_not_found.dart:2 '
-      'cannot read fragment file "test_data/frag/dne.xzy.txt"\n'
-      "FileSystemException: Cannot open file, path = "
-      "'test_data/frag/dne.xzy.txt' "
-      "(OS Error: No such file or directory, errno = 2)",
+      'cannot find a source file "test_data/diff_src/dne.xzy", '
+      'nor fragment file "test_data/frag/dne.xzy.txt"',
   'no_change/invalid_code_block.dart':
       'Error: test_data/src/no_change/invalid_code_block.dart:5 '
       'unterminated markdown code block for <?code-excerpt "quote.md"?>',
@@ -72,6 +70,7 @@ void main() {
   group('Set path:', testSetPath);
   group('Default indentation:', testDefaultIndentation);
   group('Disable escape ng interpolation:', testNoEscapeNgInterpolation);
+  group('Excerpt from src:', testSrcButNoFrag);
 }
 
 void testsFromDefaultDir() {
@@ -154,4 +153,13 @@ void testNoEscapeNgInterpolation() {
   });
 
   _stdFileTest('no_escape_ng_interpolation.md');
+}
+
+void testSrcButNoFrag() {
+  setUp(() {
+    updater =
+        new Updater(p.join(_testDir, 'fragDNE'), p.join(_testDir, 'diff_src'));
+  });
+
+  _stdFileTest('src_but_no_frag.md');
 }

@@ -92,7 +92,7 @@ Following this instruction, the paths to file fragments will be interpreted rela
 XML processing instructions cannot contain `>`. In particular this means that attribute values cannot contain `>`,
 which is a limitation for the diff `from` and `to` regular expressions.
 
-## 4. Code fragment updating details
+## 4. Code excerpt lookup and updating
 
 The updater does not create code fragment files. It does expect such files to 
 exist and be named following the conventions described below.
@@ -105,8 +105,12 @@ fragment folder, for a file named:
 - `dir/file.ext.txt`<br>
    if the region is omitted
 
-If the updater can find the fragment file, it will replace the lines contained within
-the markdown code block with those from the fragment file, indenting each
+If no such fragment is found, it will search the source directory (`--src-dir-path`) for a file named:
+
+- `dir/file.ext`
+
+If the updater finds a (fragment or original source) file, it will replace the lines contained within
+the markdown code block with those from that file, indenting each
 fragment file line as specified by the `indent-by` argument.
 
 For example, if `hello.dart.txt` contains the line "print('Hi');" then

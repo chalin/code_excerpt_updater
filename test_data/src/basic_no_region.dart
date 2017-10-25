@@ -4,13 +4,13 @@
 /// <?code-excerpt "no_region.html"?>
 /// ```html
 /// ```
-var basic1;
+int basic1;
 
 /// Test: no code in code block, directive with indentation
 /// <?code-excerpt "no_region.dart" indent-by="2"?>
 /// ```dart
 /// ```
-var basic2;
+num basic2;
 
 /// Test: out-of-date code in code block, directive with indentation
 /// <?code-excerpt "no_region.dart" indent-by="2"?>
@@ -18,4 +18,4 @@ var basic2;
 ///   we don't care what this text is since it will be replaced
 /// misindented text that we don't care about
 /// ```
-var basic3;
+dynamic basic3;
