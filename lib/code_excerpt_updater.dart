@@ -283,6 +283,11 @@ class Updater {
     // Trim trailing blank lines
     while (result.length > 0 && result.last == '') result.removeLast();
 
+    // Trim shredder docregion tag lines (it would probably be better to first
+    // filter the files and then do the time, but this is good enough for now):
+    final docregionRe = new RegExp(r'#(end)?docregion\b');
+    result.removeWhere((line) => docregionRe.hasMatch(line));
+
     // Fix file id lines by removing:
     // - [pathPrefix] from the start of the file paths so that paths are relative
     // - timestamp (because file timestamps are not relevant in the git world)
@@ -296,7 +301,7 @@ class Updater {
     final startingIdx =
         from == null ? 0 : _indexOfFirstMatch(result, 2, new RegExp(from));
     if (to != null) {
-      var lastIdx = _indexOfFirstMatch(result, startingIdx, new RegExp(to));
+      final lastIdx = _indexOfFirstMatch(result, startingIdx, new RegExp(to));
       if (lastIdx < result.length) {
         result = result.getRange(0, lastIdx + 1).toList();
       }
@@ -327,6 +332,19 @@ class Updater {
 
   /*@nullable*/
   Iterable<String> _getExcerpt(String relativePath, String region) {
+    String excerpt = _getExcerptAsString(relativePath, region);
+    if (excerpt == null) return null; // Errors have been reported
+    final result = excerpt.split(_eol);
+    // All excerpts are [_eol] terminated, so drop trailing blank lines
+    while (result.length > 0 && result.last == '') result.removeLast();
+    return _trimMinLeadingSpace(result);
+  }
+
+  /// Look for a fragment file at [fragPath], failing that look for a
+  /// source file at [srcPath]. If a file is found return its content as
+  /// a string. Otherwise, report an error and return null.
+  /*@nullable*/
+  String _getExcerptAsString(String relativePath, String region) {
     final fragExtension = '.txt';
     var file = relativePath + fragExtension;
     if (region.isNotEmpty) {
@@ -336,14 +354,25 @@ class Updater {
       file = p.join(dir, '$basename-$region$ext$fragExtension');
     }
 
-    final String fullPath = p.join(fragmentDirPath, _pathBase, file);
+    // First look for a matching fragment
+    final String fragPath = p.join(fragmentDirPath, _pathBase, file);
     try {
-      final result = new File(fullPath).readAsStringSync().split(_eol);
-      // All excerpts are [_eol] terminated, so drop trailing blank lines
-      while (result.length > 0 && result.last == '') result.removeLast();
-      return _trimMinLeadingSpace(result);
-    } on FileSystemException catch (e) {
-      _reportError('cannot read fragment file "$fullPath"');
+      return new File(fragPath).readAsStringSync();
+    } on FileSystemException {
+      if (region != '') {
+        _reportError('cannot read fragment file "$fragPath"');
+        return null;
+      }
+      // Fall through
+    }
+
+    // No fragment file file. Look for a source file with a matching file name.
+    final String srcFilePath = p.join(srcDirPath, _pathBase, relativePath);
+    try {
+      return new File(srcFilePath).readAsStringSync();
+    } on FileSystemException {
+      _reportError('cannot find a source file "$srcFilePath", '
+          'nor fragment file "$fragPath"');
       return null;
     }
   }
