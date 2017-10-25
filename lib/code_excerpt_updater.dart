@@ -343,7 +343,7 @@ class Updater {
       while (result.length > 0 && result.last == '') result.removeLast();
       return _trimMinLeadingSpace(result);
     } on FileSystemException catch (e) {
-      _reportError('cannot read fragment file "$fullPath"\n$e');
+      _reportError('cannot read fragment file "$fullPath"');
       return null;
     }
   }

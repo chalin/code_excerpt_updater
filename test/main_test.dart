@@ -28,10 +28,7 @@ String getExpected(String relPath) => _readFile(_expectedFn2Path(relPath));
 final _errMsgs = {
   'no_change/frag_not_found.dart':
       'Error: test_data/src/no_change/frag_not_found.dart:2 '
-      'cannot read fragment file "test_data/frag/dne.xzy.txt"\n'
-      "FileSystemException: Cannot open file, path = "
-      "'test_data/frag/dne.xzy.txt' "
-      "(OS Error: No such file or directory, errno = 2)",
+      'cannot read fragment file "test_data/frag/dne.xzy.txt"',
   'no_change/invalid_code_block.dart':
       'Error: test_data/src/no_change/invalid_code_block.dart:5 '
       'unterminated markdown code block for <?code-excerpt "quote.md"?>',
