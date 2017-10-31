@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- Add support for `code-excerpt` `replace` attributes having arguments of the form
+  **/_regex_/_replacement_/g**. Like in JavaScript, _replacement_ can contain
+  match capture placeholders `$1`, `$2`, etc. `$$` escapes `$`.
+
 ## 0.1.0
 
 - When a code excerpt consists of an entire file, and no corresponding fragment

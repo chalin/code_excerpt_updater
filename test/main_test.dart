@@ -107,6 +107,7 @@ void testsFromDefaultDir() {
       'escape_ng_interpolation.md',
       'fragment-indentation.md',
       'no_comment_prefix.md',
+      'replace.md',
     ];
 
     _testFileNames.forEach(_stdFileTest);

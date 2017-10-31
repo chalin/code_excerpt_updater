@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 
 const _eol = '\n';
 Function _listEq = const ListEquality().equals;
+typedef String CodeTransformer(String code);
 
 /// A simple line-based updater for markdown code-blocks. It processes given
 /// files line-by-line, looking for matches to [procInstrRE] contained within
@@ -99,7 +100,7 @@ class Updater {
       } else if (info.args.keys.length == 1 && info.args['title'] != null) {
         // Only asking for a title is ok.
       } else {
-        _warn('instruction ignored: ${info.instruction}');
+        // _warn('instruction ignored: ${info.instruction}');
       }
     } else {
       _pathBase = info.args['path-base'];
@@ -133,7 +134,8 @@ class Updater {
     }
 
     final newCodeBlockCode = args['diff-with'] == null
-        ? _getExcerpt(infoPath, info.region)
+        ? _getExcerpt(infoPath, info.region,
+            stringReplaceCodeTransformer(args['replace']))
         : _getDiff(infoPath, args);
     _log.finer('>>> new code block code: $newCodeBlockCode');
     if (newCodeBlockCode == null) {
@@ -331,17 +333,19 @@ class Updater {
   }
 
   /*@nullable*/
-  Iterable<String> _getExcerpt(String relativePath, String region) {
+  Iterable<String> _getExcerpt(
+      String relativePath, String region, CodeTransformer t) {
     String excerpt = _getExcerptAsString(relativePath, region);
     if (excerpt == null) return null; // Errors have been reported
+    if (t != null) excerpt = t(excerpt);
     final result = excerpt.split(_eol);
     // All excerpts are [_eol] terminated, so drop trailing blank lines
     while (result.length > 0 && result.last == '') result.removeLast();
     return _trimMinLeadingSpace(result);
   }
 
-  /// Look for a fragment file at [fragPath], failing that look for a
-  /// source file at [srcPath]. If a file is found return its content as
+  /// Look for a fragment file under [fragmentDirPath], failing that look for a
+  /// source file under [srcDirPath]. If a file is found return its content as
   /// a string. Otherwise, report an error and return null.
   /*@nullable*/
   String _getExcerptAsString(String relativePath, String region) {
@@ -394,6 +398,42 @@ class Updater {
         : lines.map((line) => line.length < len ? line : line.substring(len));
   }
 
+  final matchDollarNumRE = new RegExp(r'(\$+)(\d*)');
+
+/*@nullable*/
+  CodeTransformer stringReplaceCodeTransformer(String replaceExp) {
+    if (replaceExp == null) return null;
+    final replaceExpParts = replaceExp.split('/');
+    if (replaceExpParts.length != 4 || replaceExpParts[3] != 'g') {
+      _reportError('invalid replace attribute ($replaceExp); '
+          ' currently supported syntax is: /regex/replacement/g');
+      return null;
+    }
+    final re = replaceExpParts[1];
+    final replacement = replaceExpParts[2];
+    if (!matchDollarNumRE.hasMatch(replacement))
+      return (String code) => code.replaceAll(new RegExp(re), replacement);
+
+    return (String code) => code.replaceAllMapped(
+        new RegExp(re),
+        (Match m) => replacement.replaceAllMapped(matchDollarNumRE, (_m) {
+              // In JS, $$ becomes $ in a replacement string.
+              final numDollarChar = _m[1].length;
+              final escapedDollarCharsIfAny = r'$' * (numDollarChar ~/ 2);
+
+              // Even number of $'s, e.g. $$1?
+              if (numDollarChar.isEven || _m[2].isEmpty)
+                return '$escapedDollarCharsIfAny${_m[2]}';
+
+              final argNum = _toInt(_m[2]);
+              // No corresponding group? Return the arg, like in JavaScript.
+              if (argNum > m.groupCount)
+                return '$escapedDollarCharsIfAny\$${_m[2]}';
+
+              return '$escapedDollarCharsIfAny${m[argNum]}';
+            }));
+  }
+
   void _warn(String msg) =>
       _stderr.writeln('Warning: $_filePath:$lineNum $msg');
   void _reportError(String msg) =>
@@ -424,3 +464,5 @@ class InstrInfo {
 
   final Map<String, String> args = {};
 }
+
+int _toInt(String s) => int.parse(s, onError: (_) => 99999);
