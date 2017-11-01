@@ -118,7 +118,8 @@ class Updater {
     final infoPath = info.path;
 
     // TODO: only match on same prefix.
-    final codeBlockMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
+    final codeBlockMarker = new RegExp(
+        r'^\s*(///?)?\s*(```|\{%\s*(:?end)?prettify\s*(\w*)\s*%\})?');
     final currentCodeBlock = <String>[];
     if (_lines.isEmpty) {
       _reportError('reached end of input, expect code block - "$infoPath"');
@@ -398,7 +399,7 @@ class Updater {
         : lines.map((line) => line.length < len ? line : line.substring(len));
   }
 
-  final matchDollarNumRE = new RegExp(r'(\$+)(\d*)');
+  final _matchDollarNumRE = new RegExp(r'(\$+)(&|\d*)');
 
 /*@nullable*/
   CodeTransformer stringReplaceCodeTransformer(String replaceExp) {
@@ -411,31 +412,33 @@ class Updater {
     }
     final re = replaceExpParts[1];
     final replacement = replaceExpParts[2];
-    if (!matchDollarNumRE.hasMatch(replacement))
+    if (!_matchDollarNumRE.hasMatch(replacement))
       return (String code) => code.replaceAll(new RegExp(re), replacement);
 
     return (String code) => code.replaceAllMapped(
         new RegExp(re),
-        (Match m) => replacement.replaceAllMapped(matchDollarNumRE, (_m) {
+        (Match m) => replacement.replaceAllMapped(_matchDollarNumRE, (_m) {
               // In JS, $$ becomes $ in a replacement string.
               final numDollarChar = _m[1].length;
-              final escapedDollarCharsIfAny = r'$' * (numDollarChar ~/ 2);
+              // Escaped dollar characters, if any:
+              final dollars = r'$' * (numDollarChar ~/ 2);
 
               // Even number of $'s, e.g. $$1?
               if (numDollarChar.isEven || _m[2].isEmpty)
-                return '$escapedDollarCharsIfAny${_m[2]}';
+                return '$dollars${_m[2]}';
+
+              if (_m[2] == '&') return '$dollars${m[0]}';
 
               final argNum = _toInt(_m[2]);
               // No corresponding group? Return the arg, like in JavaScript.
-              if (argNum > m.groupCount)
-                return '$escapedDollarCharsIfAny\$${_m[2]}';
+              if (argNum > m.groupCount) return '$dollars\$${_m[2]}';
 
-              return '$escapedDollarCharsIfAny${m[argNum]}';
+              return '$dollars${m[argNum]}';
             }));
   }
 
-  void _warn(String msg) =>
-      _stderr.writeln('Warning: $_filePath:$lineNum $msg');
+  // void _warn(String msg) =>
+  //    _stderr.writeln('Warning: $_filePath:$lineNum $msg');
   void _reportError(String msg) =>
       _stderr.writeln('Error: $_filePath:$lineNum $msg');
 }

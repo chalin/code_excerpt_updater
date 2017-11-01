@@ -7,3 +7,7 @@
 <?code-excerpt "basic.dart" replace="/hell(o)/b$1nj$1ur$$1$2/g"?>
 ```
 ```
+
+<?code-excerpt "basic.dart" replace="/hel*o/$& $&/g"?>
+```
+```

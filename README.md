@@ -55,7 +55,10 @@ The first (unnamed) argument defines a path to a fragment file. The argument can
 
 Recognized arguments are:
 - `region`, a code fragment region name.
-- `indent-by`, define the number of spaces to be used to indent the code in the code block.
+- `replace="/regex/replacement/g"` defines a [regular expression][]/replacement expression pair for use in a global
+  search-and-replace applied to the code excerpt.
+  The replacement expression can contain capture group syntax `$&`, `$1`, `$2`, ... .
+- `indent-by` defines the number of spaces to be used to indent the code in the code block.
    (Default is no indentation.)
 - `path-base`, when provided, must be the only argument. Its use is described below in the second instruction form.
 
@@ -63,6 +66,7 @@ Notes:
 - The `<?code-excerpt?>` instruction can optionally be preceded by an single-line comment
   token. Namely either `//` or `///`.
 - Path, and arguments if given, must be enclosed in double quotes.
+- It is a limitation of processing instructions that it cannot contain a `>` character.
 
 ### b. Code diff
 
@@ -195,3 +199,5 @@ update tool would generate:
 ## 6. Tests
 
 Repo tests can be launched from `test/main.dart`.
+
+[regular expression]: https://api.dartlang.org/stable/dart-core/RegExp-class.html

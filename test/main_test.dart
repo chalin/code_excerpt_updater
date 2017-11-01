@@ -108,6 +108,7 @@ void testsFromDefaultDir() {
       'fragment-indentation.md',
       'no_comment_prefix.md',
       'replace.md',
+      'language-tour.md',
     ];
 
     _testFileNames.forEach(_stdFileTest);

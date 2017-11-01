@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Add support for code blocks braced between `{% prettify opt-lang %}` and
+  `{% endprettify %}`, as used in site-www.
+- Add support for `$&` is replacement expressions of the `replace` attribute.
+
 ## 0.2.0
 
 - Add support for `code-excerpt` `replace` attributes having arguments of the form
