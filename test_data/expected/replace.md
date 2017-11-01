@@ -15,3 +15,11 @@ var scope = 'world';
 
 void main() => print('$greeting $scope');
 ```
+
+<?code-excerpt "basic.dart" replace="/hel*o/$& $&/g"?>
+```
+var greeting = 'hello hello';
+var scope = 'world';
+
+void main() => print('$greeting $scope');
+```
