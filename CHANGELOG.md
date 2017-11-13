@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+- Support escaped backslash characters (`\/`) in the replace expression of 
+  replace attributes; e.g., `replace="/(foo)/$&\/bar/g"` will replace
+  `foo` by `foo/bar`.
+
 ## 0.3.0
 
 - Add support for code blocks braced between `{% prettify opt-lang %}` and
