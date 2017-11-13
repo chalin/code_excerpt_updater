@@ -400,11 +400,17 @@ class Updater {
   }
 
   final _matchDollarNumRE = new RegExp(r'(\$+)(&|\d*)');
+  final _escapedSlashRE = new RegExp(r'\\/');
+  final _zeroChar = '\u{0}';
 
 /*@nullable*/
   CodeTransformer stringReplaceCodeTransformer(String replaceExp) {
     if (replaceExp == null) return null;
-    final replaceExpParts = replaceExp.split('/');
+    final replaceExpParts = replaceExp
+        .replaceAll(_escapedSlashRE, _zeroChar)
+        .split('/')
+        .map((s) => s.replaceAll(_zeroChar, '/'))
+        .toList();
     if (replaceExpParts.length != 4 || replaceExpParts[3] != 'g') {
       _reportError('invalid replace attribute ($replaceExp); '
           ' currently supported syntax is: /regex/replacement/g');
