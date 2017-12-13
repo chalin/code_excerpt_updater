@@ -31,3 +31,11 @@ var scope = 'world';
 
 void main() => print('$greeting $scope');
 ```
+
+<?code-excerpt "basic.dart" replace="/;/; \/\/!/g;/hello/bonjour/g;/(bonjour.*?)!/$1?/g"?>
+```
+var greeting = 'bonjour'; //?
+var scope = 'world'; //!
+
+void main() => print('$greeting $scope'); //!
+```

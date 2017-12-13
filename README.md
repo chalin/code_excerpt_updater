@@ -55,8 +55,8 @@ The first (unnamed) argument defines a path to a fragment file. The argument can
 
 Recognized arguments are:
 - `region`, a code fragment region name.
-- `replace="/regex/replacement/g"` defines a [regular expression][]/replacement expression pair for use in a global
-  search-and-replace applied to the code excerpt.
+- `replace="/regexp/replacement/g;..."` defines one or more semi-colon separated [regular expression][]/replacement
+  expression pairs for use in a global search-and-replace applied to the code excerpt.
   The replacement expression can contain capture group syntax `$&`, `$1`, `$2`, ... .
 - `indent-by` defines the number of spaces to be used to indent the code in the code block.
    (Default is no indentation.)
@@ -72,7 +72,7 @@ Notes:
 
 The second form of the instruction
 
-    <?code-excerpt "path/file.ext" diff-with="path2/file2.ext2" from="regex" to="regex"?>
+    <?code-excerpt "path/file.ext" diff-with="path2/file2.ext2" from="regexp" to="regexp"?>
     ```
       ...
     ```
