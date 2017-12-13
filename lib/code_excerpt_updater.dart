@@ -44,7 +44,7 @@ class Updater {
       this.escapeNgInterpolation = true,
       Stdout err})
       : _stderr = err ?? stderr {
-    // Logger.root.level = Level.ALL;
+    Logger.root.level = Level.OFF;
     Logger.root.onRecord.listen((LogRecord rec) {
       print('${rec.level.name}: ${rec.time}: ${rec.message}');
     });
@@ -209,7 +209,7 @@ class Updater {
   void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
 
-    final RegExp procInstrArgRE = new RegExp(r'(\s*([-\w]+)=")([^"}]*)"\s*');
+    final RegExp procInstrArgRE = new RegExp(r'(\s*([-\w]+)=")(.*?)"\s*');
     final matches = procInstrArgRE.allMatches(argsAsString);
     _log.finer('>>> ${matches.length} args with values in $argsAsString');
 

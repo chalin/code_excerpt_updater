@@ -19,3 +19,9 @@
 <?code-excerpt "basic.dart" replace="/;/; \/\/!/g;/hello/bonjour/g;/(bonjour.*?)!/$1?/g"?>
 ```
 ```
+
+Regression: support `}` in regexp.
+
+<?code-excerpt "basic.dart" replace="/([\)\}]);/$1; \/\/!/g"?>
+```
+```

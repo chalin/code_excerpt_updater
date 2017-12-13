@@ -39,3 +39,13 @@ var scope = 'world'; //!
 
 void main() => print('$greeting $scope'); //!
 ```
+
+Regression: support `}` in regexp.
+
+<?code-excerpt "basic.dart" replace="/([\)\}]);/$1; \/\/!/g"?>
+```
+var greeting = 'hello';
+var scope = 'world';
+
+void main() => print('$greeting $scope'); //!
+```
