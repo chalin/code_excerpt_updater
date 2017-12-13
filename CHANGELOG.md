@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+
+- Fix: a `replace` regexp with `}`  would break the parsing of `code-excerpt` args.
+
 ## 0.4.0
 
 - Support multiple semi-colon separated "/foo/bar/g" expressions as arguments to `replace`.
