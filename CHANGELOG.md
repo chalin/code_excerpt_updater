@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+- Support multiple semi-colon separated "/foo/bar/g" expressions as arguments to `replace`.
+
 ## 0.3.1
 
 - Support escaped backslash characters (`\/`) in the replace expression of 

@@ -12,6 +12,9 @@ const _eol = '\n';
 Function _listEq = const ListEquality().equals;
 typedef String CodeTransformer(String code);
 
+CodeTransformer compose(CodeTransformer f, CodeTransformer g) =>
+    f == null ? g : g == null ? f : (String s) => g(f(s));
+
 /// A simple line-based updater for markdown code-blocks. It processes given
 /// files line-by-line, looking for matches to [procInstrRE] contained within
 /// markdown code blocks.
@@ -402,22 +405,52 @@ class Updater {
   final _matchDollarNumRE = new RegExp(r'(\$+)(&|\d*)');
   final _escapedSlashRE = new RegExp(r'\\/');
   final _zeroChar = '\u{0}';
+  final _endRE = new RegExp(r'^g;?\s*$');
 
-/*@nullable*/
+  /*@nullable*/
   CodeTransformer stringReplaceCodeTransformer(String replaceExp) {
+    dynamic _reportErr([String extraInfo = '']) =>
+        _reportError('invalid replace attribute ("$replaceExp"); ' +
+            (extraInfo.isEmpty ? '' : '$extraInfo; ') +
+            'supported syntax is 1 or more semi-colon-separated: /regexp/replacement/g');
+
     if (replaceExp == null) return null;
     final replaceExpParts = replaceExp
         .replaceAll(_escapedSlashRE, _zeroChar)
         .split('/')
         .map((s) => s.replaceAll(_zeroChar, '/'))
         .toList();
-    if (replaceExpParts.length != 4 || replaceExpParts[3] != 'g') {
-      _reportError('invalid replace attribute ($replaceExp); '
-          ' currently supported syntax is: /regex/replacement/g');
-      return null;
+
+    // replaceExpParts = [''] + n x [re, replacement, end] where n >= 1 and
+    // end matches _endRE.
+
+    final start = replaceExpParts[0];
+    final len = replaceExpParts.length;
+    if (len < 4 || len % 3 != 1)
+      return _reportErr('argument has missing parts ($len)');
+
+    if (start != '')
+      return _reportErr('argument should start with "/", not  "$start"');
+
+    final transformers = <CodeTransformer>[];
+    for (int i = 1; i < replaceExpParts.length; i += 3) {
+      final re = replaceExpParts[i];
+      final replacement = replaceExpParts[i + 1];
+      final end = replaceExpParts[i + 2];
+      if (!_endRE.hasMatch(end)) {
+        _reportErr(
+            'expected argument end syntax of "g" or "g;" but found "$end"');
+        return null;
+      }
+      final transformer = _stringReplaceCodeTransformer(re, replacement);
+      if (transformer != null) transformers.add(transformer);
     }
-    final re = replaceExpParts[1];
-    final replacement = replaceExpParts[2];
+
+    return transformers.fold(null, compose);
+  }
+
+  /*@nullable*/
+  CodeTransformer _stringReplaceCodeTransformer(String re, String replacement) {
     if (!_matchDollarNumRE.hasMatch(replacement))
       return (String code) => code.replaceAll(new RegExp(re), replacement);
 

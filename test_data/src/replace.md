@@ -15,3 +15,7 @@
 <?code-excerpt "basic.dart" replace="/hello/$&\/bonjour/g"?>
 ```
 ```
+
+<?code-excerpt "basic.dart" replace="/;/; \/\/!/g;/hello/bonjour/g;/(bonjour.*?)!/$1?/g"?>
+```
+```
