@@ -20,7 +20,22 @@
 ```
 ```
 
-Regression: support `}` in regexp.
+### Global/shared replace
+
+<?code-excerpt replace="/bonjour/hola/g"?>
+
+<?code-excerpt "basic.dart" replace="/hello/bonjour/g;/world/mundo/g"?>
+```
+```
+
+### Reset global replace
+
+<?code-excerpt replace=""?>
+<?code-excerpt "basic.dart" replace="/hello/bonjour/g"?>
+```
+```
+
+### Regression: support `}` in regexp.
 
 <?code-excerpt "basic.dart" replace="/([\)\}]);/$1; \/\/!/g"?>
 ```

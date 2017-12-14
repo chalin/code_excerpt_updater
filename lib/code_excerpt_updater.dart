@@ -31,6 +31,7 @@ class Updater {
   final bool escapeNgInterpolation;
 
   String _pathBase = ''; // init from <?code-excerpt path-base="..."?>
+  CodeTransformer _globalCodeTransformer;
 
   String _filePath = '';
   int _origNumLines = 0;
@@ -44,7 +45,7 @@ class Updater {
       this.escapeNgInterpolation = true,
       Stdout err})
       : _stderr = err ?? stderr {
-    Logger.root.level = Level.OFF;
+    Logger.root.level = Level.WARNING;
     Logger.root.onRecord.listen((LogRecord rec) {
       print('${rec.level.name}: ${rec.time}: ${rec.message}');
     });
@@ -88,7 +89,7 @@ class Updater {
       final info = _extractAndNormalizeArgs(match);
 
       if (info.unnamedArg == null) {
-        _processSetPath(info);
+        _processSetInstruction(info);
       } else {
         output.addAll(_getUpdatedCodeBlock(info));
       }
@@ -96,21 +97,30 @@ class Updater {
     return output.join(_eol);
   }
 
-  void _processSetPath(InstrInfo info) {
-    if (info.args['path-base'] == null) {
-      if (info.args.keys.length == 0) {
-        // Empty instruction is ok.
-      } else if (info.args.keys.length == 1 && info.args['title'] != null) {
-        // Only asking for a title is ok.
-      } else {
-        // _warn('instruction ignored: ${info.instruction}');
-      }
-    } else {
-      _pathBase = info.args['path-base'];
+  void _processSetInstruction(InstrInfo info) {
+    void _checkForMoreThan1ArgErr() {
       if (info.args.keys.length > 1) {
         _reportError(
-            '"path-base" should be the only argument in the instruction:  ${info.instruction}');
+            'set instruction should have at most one argument: ${info.instruction}');
       }
+    }
+
+    if (info.args['path-base'] != null) {
+      _pathBase = info.args['path-base'];
+      _checkForMoreThan1ArgErr();
+    } else if (info.args['replace'] != null) {
+      if (info.args['replace'].isEmpty) {
+        _globalCodeTransformer = null;
+      } else {
+        _globalCodeTransformer = replaceCodeTransformer(info.args['replace']);
+      }
+      _checkForMoreThan1ArgErr();
+    } else if (info.args.keys.length == 0) {
+      // Ignore empty instruction, other tools process them.
+    } else if (info.args.keys.length == 1 && info.args['title'] != null) {
+      // Only asking for a title is ok.
+    } else {
+      _log.warning('instruction ignored: ${info.instruction}');
     }
   }
 
@@ -121,8 +131,8 @@ class Updater {
     final infoPath = info.path;
 
     // TODO: only match on same prefix.
-    final codeBlockMarker = new RegExp(
-        r'^\s*(///?)?\s*(```|\{%\s*(:?end)?prettify\s*(\w*)\s*%\})?');
+    final codeBlockMarker =
+        new RegExp(r'^\s*(///?)?\s*(```|{%\s*(:?end)?prettify\s*(\w*)\s*%})?');
     final currentCodeBlock = <String>[];
     if (_lines.isEmpty) {
       _reportError('reached end of input, expect code block - "$infoPath"');
@@ -138,8 +148,11 @@ class Updater {
     }
 
     final newCodeBlockCode = args['diff-with'] == null
-        ? _getExcerpt(infoPath, info.region,
-            stringReplaceCodeTransformer(args['replace']))
+        ? _getExcerpt(
+            infoPath,
+            info.region,
+            compose(replaceCodeTransformer(args['replace']),
+                _globalCodeTransformer))
         : _getDiff(infoPath, args);
     _log.finer('>>> new code block code: $newCodeBlockCode');
     if (newCodeBlockCode == null) {
@@ -408,7 +421,7 @@ class Updater {
   final _endRE = new RegExp(r'^g;?\s*$');
 
   /*@nullable*/
-  CodeTransformer stringReplaceCodeTransformer(String replaceExp) {
+  CodeTransformer replaceCodeTransformer(String replaceExp) {
     dynamic _reportErr([String extraInfo = '']) =>
         _reportError('invalid replace attribute ("$replaceExp"); ' +
             (extraInfo.isEmpty ? '' : '$extraInfo; ') +
@@ -442,7 +455,7 @@ class Updater {
             'expected argument end syntax of "g" or "g;" but found "$end"');
         return null;
       }
-      final transformer = _stringReplaceCodeTransformer(re, replacement);
+      final transformer = _replaceCodeTransformer(re, replacement);
       if (transformer != null) transformers.add(transformer);
     }
 
@@ -450,7 +463,7 @@ class Updater {
   }
 
   /*@nullable*/
-  CodeTransformer _stringReplaceCodeTransformer(String re, String replacement) {
+  CodeTransformer _replaceCodeTransformer(String re, String replacement) {
     if (!_matchDollarNumRE.hasMatch(replacement))
       return (String code) => code.replaceAll(new RegExp(re), replacement);
 

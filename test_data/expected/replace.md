@@ -40,7 +40,30 @@ var scope = 'world'; //!
 void main() => print('$greeting $scope'); //!
 ```
 
-Regression: support `}` in regexp.
+### Global/shared replace
+
+<?code-excerpt replace="/bonjour/hola/g"?>
+
+<?code-excerpt "basic.dart" replace="/hello/bonjour/g;/world/mundo/g"?>
+```
+var greeting = 'hola';
+var scope = 'mundo';
+
+void main() => print('$greeting $scope');
+```
+
+### Reset global replace
+
+<?code-excerpt replace=""?>
+<?code-excerpt "basic.dart" replace="/hello/bonjour/g"?>
+```
+var greeting = 'bonjour';
+var scope = 'world';
+
+void main() => print('$greeting $scope');
+```
+
+### Regression: support `}` in regexp.
 
 <?code-excerpt "basic.dart" replace="/([\)\}]);/$1; \/\/!/g"?>
 ```
