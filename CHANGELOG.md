@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0
+
+- Support global replace instruction.
+
 ## 0.4.1
 
 - Fix: a `replace` regexp with `}`  would break the parsing of `code-excerpt` args.

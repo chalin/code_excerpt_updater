@@ -81,9 +81,15 @@ must also be followed by a code block. When the code_excerpt_updater is run, it 
 block with the output of `diff -u path/file.ext path2/file2.ext2` truncated at the first diff output line that
 matches the `to` regular expression. The `from` attribute is currently ignored. Both `from` and `to` are optional.
 
-### c. Path-base
+### c. Set instruction
 
-The final form of the instruction is:
+Use a set instruction to globally set a path base, or a replace expression (using the syntax described above).
+
+A global **replace** instructions applies to all subsequence code-excerpt instructions. To reset, use an
+empty replace argument. If a code-excerpt instruction has a replace argument, the global replace
+is applied after the code-excerpt-specific replace.
+
+Here is an example of setting a **path base**:
 
 ```
 <?code-excerpt path-base="subdirPath"?>
