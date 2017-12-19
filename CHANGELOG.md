@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1
+
+- Support the following special characters in replace arguments:
+  `\t`, `\n`, and hexadecimal character codes `\xHH`.
+
 ## 0.5.0
 
 - Support global replace instruction.

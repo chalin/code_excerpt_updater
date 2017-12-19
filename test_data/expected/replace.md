@@ -40,7 +40,43 @@ var scope = 'world'; //!
 void main() => print('$greeting $scope'); //!
 ```
 
-### Global/shared replace
+### Special characters starting with a slash
+
+- Test `\n` in regexp part
+
+  <?code-excerpt "no_region.html" replace="/\n//g"?>
+  ```
+  <div>  <h1>Hello World!</h1></div>
+  ```
+
+- Test `\n` in replacement part, along with escaped `\\n`:
+
+  <?code-excerpt "quote.md" replace="/\s*\*+\s*/\n/g; /\./\\n/g"?>
+  ```
+  This is a
+  markdown
+  fragment\n
+  ```
+
+- Test replacement of `>` when written as `\x3E`:
+
+  <?code-excerpt "no_region.html" replace="/<(\/?)h1\x3E/<$1h2\x3E/g"?>
+  ```
+  <div>
+    <h2>Hello World!</h2>
+  </div>
+  ```
+
+- Ensure that double slashes aren't interpreted specially:
+
+  <?code-excerpt "no_region.html" replace="/\\x3E//g; /!/\\xAB/g"?>
+  ```
+  <div>
+    <h1>Hello World\xAB</h1>
+  </div>
+  ```
+
+### File-global replace
 
 <?code-excerpt replace="/bonjour/hola/g"?>
 
@@ -52,7 +88,7 @@ var scope = 'mundo';
 void main() => print('$greeting $scope');
 ```
 
-### Reset global replace
+### Reset file-global replace
 
 <?code-excerpt replace=""?>
 <?code-excerpt "basic.dart" replace="/hello/bonjour/g"?>
