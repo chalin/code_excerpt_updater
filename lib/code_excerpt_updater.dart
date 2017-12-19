@@ -8,6 +8,8 @@ import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
+import 'src/util.dart';
+
 const _eol = '\n';
 Function _listEq = const ListEquality().equals;
 typedef String CodeTransformer(String code);
@@ -416,8 +418,6 @@ class Updater {
   }
 
   final _matchDollarNumRE = new RegExp(r'(\$+)(&|\d*)');
-  final _escapedSlashRE = new RegExp(r'\\/');
-  final _zeroChar = '\u{0}';
   final _endRE = new RegExp(r'^g;?\s*$');
 
   /*@nullable*/
@@ -429,9 +429,9 @@ class Updater {
 
     if (replaceExp == null) return null;
     final replaceExpParts = replaceExp
-        .replaceAll(_escapedSlashRE, _zeroChar)
+        .replaceAll(escapedSlashRE, zeroChar)
         .split('/')
-        .map((s) => s.replaceAll(_zeroChar, '/'))
+        .map((s) => s.replaceAll(zeroChar, '/'))
         .toList();
 
     // replaceExpParts = [''] + n x [re, replacement, end] where n >= 1 and
@@ -463,7 +463,10 @@ class Updater {
   }
 
   /*@nullable*/
-  CodeTransformer _replaceCodeTransformer(String re, String replacement) {
+  CodeTransformer _replaceCodeTransformer(String re, String _replacement) {
+    final replacement = encodeSlashChar(_replacement);
+    _log.finest(' >> replacement expr: $replacement');
+
     if (!_matchDollarNumRE.hasMatch(replacement))
       return (String code) => code.replaceAll(new RegExp(re), replacement);
 
@@ -481,7 +484,7 @@ class Updater {
 
               if (_m[2] == '&') return '$dollars${m[0]}';
 
-              final argNum = _toInt(_m[2]);
+              final argNum = toInt(_m[2], errorValue: m.groupCount + 1);
               // No corresponding group? Return the arg, like in JavaScript.
               if (argNum > m.groupCount) return '$dollars\$${_m[2]}';
 
@@ -519,5 +522,3 @@ class InstrInfo {
 
   final Map<String, String> args = {};
 }
-
-int _toInt(String s) => int.parse(s, onError: (_) => 99999);
