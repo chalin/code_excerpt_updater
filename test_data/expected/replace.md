@@ -76,14 +76,16 @@ void main() => print('$greeting $scope'); //!
   </div>
   ```
 
-### File-global replace
+### Command-line and File-global replace test
+
+Command-line replace expression is /mundo/$&!/g, which is to be applied last.
 
 <?code-excerpt replace="/bonjour/hola/g"?>
 
 <?code-excerpt "basic.dart" replace="/hello/bonjour/g;/world/mundo/g"?>
 ```
 var greeting = 'hola';
-var scope = 'mundo';
+var scope = 'mundo!';
 
 void main() => print('$greeting $scope');
 ```

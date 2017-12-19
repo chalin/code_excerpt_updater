@@ -71,6 +71,34 @@ void main() {
   group('Default indentation:', testDefaultIndentation);
   group('Disable escape ng interpolation:', testNoEscapeNgInterpolation);
   group('Excerpt from src:', testSrcButNoFrag);
+
+  test('Replace command line option: invalid expression', () {
+    try {
+      new Updater(p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
+          globalReplaceExpr: 'invalidReplaceExpr', err: _stderr);
+    } catch (e) {
+      expect(
+          e.toString(),
+          'Exception: Command line replace expression'
+          ' is invalid: invalidReplaceExpr');
+      return;
+    }
+    expect(true, false);
+  });
+
+  group('Replace command line option:', testReplaceCmdLineOption);
+}
+
+void testReplaceCmdLineOption() {
+  const replaceExpr = r'/mundo/$&!/g';
+
+  setUp(() {
+    clearInteractions(_stderr);
+    updater = new Updater(p.join(_testDir, 'frag'), '',
+        globalReplaceExpr: replaceExpr, err: _stderr);
+  });
+
+  _stdFileTest('replace.md');
 }
 
 void testsFromDefaultDir() {
@@ -107,7 +135,6 @@ void testsFromDefaultDir() {
       'escape_ng_interpolation.md',
       'fragment-indentation.md',
       'no_comment_prefix.md',
-      'replace.md',
       'language-tour.md',
     ];
 

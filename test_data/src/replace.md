@@ -46,7 +46,9 @@
   ```
   ```
 
-### File-global replace
+### Command-line and File-global replace test
+
+Command-line replace expression is /mundo/$&!/g, which is to be applied last.
 
 <?code-excerpt replace="/bonjour/hola/g"?>
 
