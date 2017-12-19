@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2
+
+- Support the `--replace="/.../.../g; ..."` command line option.
+
 ## 0.5.1
 
 - Support the following special characters in replace arguments:

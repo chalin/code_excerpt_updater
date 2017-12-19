@@ -31,9 +31,11 @@ class Updater {
   final String srcDirPath;
   final int defaultIndentation;
   final bool escapeNgInterpolation;
+  final String globalReplaceExpr;
 
   String _pathBase = ''; // init from <?code-excerpt path-base="..."?>
   CodeTransformer _globalCodeTransformer;
+  CodeTransformer _fileGlobalCodeTransformer;
 
   String _filePath = '';
   int _origNumLines = 0;
@@ -42,21 +44,37 @@ class Updater {
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
   /// [err] defaults to [_stderr].
-  Updater(this.fragmentDirPath, this.srcDirPath,
-      {this.defaultIndentation = 0,
-      this.escapeNgInterpolation = true,
-      Stdout err})
+  Updater(
+    this.fragmentDirPath,
+    this.srcDirPath, {
+    this.defaultIndentation = 0,
+    this.escapeNgInterpolation = true,
+    this.globalReplaceExpr = '',
+    Stdout err,
+  })
       : _stderr = err ?? stderr {
     Logger.root.level = Level.WARNING;
     Logger.root.onRecord.listen((LogRecord rec) {
       print('${rec.level.name}: ${rec.time}: ${rec.message}');
     });
+    if (globalReplaceExpr.isNotEmpty) {
+      _globalCodeTransformer = replaceCodeTransformer(globalReplaceExpr);
+      if (_globalCodeTransformer == null) {
+        // Error details have already been reported, now throw.
+        final msg =
+            'Command line replace expression is invalid: $globalReplaceExpr';
+        throw new Exception(msg);
+      }
+    }
   }
 
   int get numSrcDirectives => _numSrcDirectives;
   int get numUpdatedFrag => _numUpdatedFrag;
 
   int get lineNum => _origNumLines - _lines.length;
+
+  CodeTransformer get fileAndCmdLineCodeTransformer =>
+      compose(_fileGlobalCodeTransformer, _globalCodeTransformer);
 
   /// Returns the content of the file at [path] with code blocks updated.
   /// Missing fragment files are reported via `err`.
@@ -112,9 +130,10 @@ class Updater {
       _checkForMoreThan1ArgErr();
     } else if (info.args['replace'] != null) {
       if (info.args['replace'].isEmpty) {
-        _globalCodeTransformer = null;
+        _fileGlobalCodeTransformer = null;
       } else {
-        _globalCodeTransformer = replaceCodeTransformer(info.args['replace']);
+        _fileGlobalCodeTransformer =
+            replaceCodeTransformer(info.args['replace']);
       }
       _checkForMoreThan1ArgErr();
     } else if (info.args.keys.length == 0) {
@@ -154,7 +173,7 @@ class Updater {
             infoPath,
             info.region,
             compose(replaceCodeTransformer(args['replace']),
-                _globalCodeTransformer))
+                fileAndCmdLineCodeTransformer))
         : _getDiff(infoPath, args);
     _log.finer('>>> new code block code: $newCodeBlockCode');
     if (newCodeBlockCode == null) {

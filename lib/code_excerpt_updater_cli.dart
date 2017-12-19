@@ -20,20 +20,21 @@ class UpdaterCLI {
   static final _srcDirPathFlagName = 'src-dir-path';
   static final _defaultPath =
       '(defaults to "", that is, the current working directory)';
+  static final _replaceName = 'replace';
 
   final _parser = new ArgParser()
     ..addOption(_fragmentDirPathFlagName,
         abbr: 'p',
-        help: 'Path to directory containing code fragment files\n$_defaultPath')
+        help: 'PATH to directory containing code fragment files\n$_defaultPath')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help')
     ..addOption(_indentFlagName,
         abbr: 'i',
-        defaultsTo: "0",
+        defaultsTo: '0',
         help:
-            'Default number of spaces to use as indentation for code inside code blocks')
+            'NUMBER. Default number of spaces to use as indentation for code inside code blocks')
     ..addOption(_srcDirPathFlagName,
         abbr: 'q',
-        help: 'Path to directory containing code used in diffs\n$_defaultPath')
+        help: 'PATH to directory containing code used in diffs\n$_defaultPath')
     ..addFlag(_inPlaceFlagName,
         abbr: 'w',
         defaultsTo: false,
@@ -41,10 +42,13 @@ class UpdaterCLI {
         help: 'Write updates to files in-place')
     ..addFlag(_escapeNgInterpolationFlagName,
         defaultsTo: true,
-        help: 'Escape Angular interpolation syntax {{...}} as {!{...}!}');
+        help: 'Escape Angular interpolation syntax {{...}} as {!{...}!}')
+    ..addOption(_replaceName,
+        help:
+            'REPLACE-EXPRESSIONs. Global replace argument. See README for syntax.');
 
   bool escapeNgInterpolation;
-  String fragmentDirPath, srcDirPath;
+  String fragmentDirPath, srcDirPath, replaceExpr;
   bool inPlaceFlag;
   int indentation;
   List<String> pathsToFileOrDir = [];
@@ -85,6 +89,7 @@ class UpdaterCLI {
     escapeNgInterpolation = args[_escapeNgInterpolationFlagName];
     fragmentDirPath = args[_fragmentDirPathFlagName] ?? '';
     inPlaceFlag = args[_inPlaceFlagName];
+    replaceExpr = args[_replaceName] ?? '';
     srcDirPath = args[_srcDirPathFlagName] ?? '';
 
     argsAreValid = true;
@@ -143,9 +148,13 @@ class UpdaterCLI {
   }
 
   Future _updateFile(String filePath) async {
-    final updater = new Updater(fragmentDirPath, srcDirPath,
-        defaultIndentation: indentation,
-        escapeNgInterpolation: escapeNgInterpolation);
+    final updater = new Updater(
+      fragmentDirPath,
+      srcDirPath,
+      defaultIndentation: indentation,
+      escapeNgInterpolation: escapeNgInterpolation,
+      globalReplaceExpr: replaceExpr,
+    );
     final result = updater.generateUpdatedFile(filePath);
 
     numSrcDirectives += updater.numSrcDirectives;

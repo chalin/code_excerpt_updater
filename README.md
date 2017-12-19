@@ -15,19 +15,21 @@ pub global activate --source git https://github.com/chalin/code_excerpt_updater.
 ```
 Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
--p, --fragment-dir-path               Path to directory containing code fragment files
+-p, --fragment-dir-path               PATH to directory containing code fragment files
                                       (defaults to "", that is, the current working directory)
 
 -h, --help                            Show command help
--i, --indentation                     Default number of spaces to use as indentation for code inside code blocks
+-i, --indentation                     NUMBER. Default number of spaces to use as indentation for code inside code blocks
                                       (defaults to "0")
 
--q, --src-dir-path                    Path to directory containing code used in diffs
+-q, --src-dir-path                    PATH to directory containing code used in diffs
                                       (defaults to "", that is, the current working directory)
 
 -w, --write-in-place                  Write updates to files in-place
     --[no-]escape-ng-interpolation    Escape Angular interpolation syntax {{...}} as {!{...}!}
                                       (defaults to on)
+
+    --replace                         REPLACE-EXPRESSIONs. Global replace argument. See README for syntax.
 ```
 
 For example, you could run the updater over
