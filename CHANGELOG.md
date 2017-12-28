@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.3
+
+- Don't warn about instructions having a `class`
+  argument but no `title` since these are processed
+  by other tools.
+
 ## 0.5.2
 
 - Support the `--replace="/.../.../g; ..."` command line option.

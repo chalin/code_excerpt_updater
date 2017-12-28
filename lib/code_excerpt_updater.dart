@@ -136,7 +136,8 @@ class Updater {
             replaceCodeTransformer(info.args['replace']);
       }
       _checkForMoreThan1ArgErr();
-    } else if (info.args.keys.length == 0) {
+    } else if (info.args.keys.length == 0 ||
+        info.args.keys.length == 1 && info.args['class'] != null) {
       // Ignore empty instruction, other tools process them.
     } else if (info.args.keys.length == 1 && info.args['title'] != null) {
       // Only asking for a title is ok.
