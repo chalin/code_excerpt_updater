@@ -134,8 +134,9 @@ void testsFromDefaultDir() {
       'basic_with_region.dart',
       'escape_ng_interpolation.md',
       'fragment-indentation.md',
-      'no_comment_prefix.md',
       'language-tour.md',
+      'no_comment_prefix.md',
+      'retain.md',
     ];
 
     _testFileNames.forEach(_stdFileTest);
