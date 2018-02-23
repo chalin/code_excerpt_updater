@@ -56,10 +56,14 @@ The first (unnamed) argument defines a path to a fragment file. The argument can
 &mdash; any non-word character sequences (`\w+`) in the region name are converted to a hyphen.
 
 Recognized arguments are:
+
 - `region`, a code fragment region name.
 - `replace="/regexp/replacement/g;..."` defines one or more semi-colon separated [regular expression][]/replacement
   expression pairs for use in a global search-and-replace applied to the code excerpt.
   The replacement expression can contain capture group syntax `$&`, `$1`, `$2`, ... .
+- `retain="string"` will retain the lines, from the identified code excerpt file, that contain the given string;
+   `retain="/regexp/"` will retain the lines matching the given regular expression. To match a string starting
+   with a slash, escape it.
 - `indent-by` defines the number of spaces to be used to indent the code in the code block.
    (Default is no indentation.)
 - `path-base`, when provided, must be the only argument. Its use is described below in the second instruction form.
@@ -69,6 +73,8 @@ Notes:
   token. Namely either `//` or `///`.
 - Path, and arguments if given, must be enclosed in double quotes.
 - It is a limitation of processing instructions that it cannot contain a `>` character.
+  This limitation can be overcome in some situations: e.g., in a regexp, use `\x3E` as an encoding of `>`.
+- If both `retain` and `replace` arguments are provided, the `retain` filter is always applied first.
 
 ### b. Code diff
 

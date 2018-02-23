@@ -13,6 +13,7 @@ import 'src/util.dart';
 const _eol = '\n';
 Function _listEq = const ListEquality().equals;
 typedef String CodeTransformer(String code);
+typedef bool Predicate<T>(T t);
 
 CodeTransformer compose(CodeTransformer f, CodeTransformer g) =>
     f == null ? g : g == null ? f : (String s) => g(f(s));
@@ -173,8 +174,12 @@ class Updater {
         ? _getExcerpt(
             infoPath,
             info.region,
-            compose(replaceCodeTransformer(args['replace']),
-                fileAndCmdLineCodeTransformer))
+            [
+              retainCodeTransformer(args['retain']),
+              replaceCodeTransformer(args['replace']),
+              fileAndCmdLineCodeTransformer,
+            ].fold(null, compose),
+          )
         : _getDiff(infoPath, args);
     _log.finer('>>> new code block code: $newCodeBlockCode');
     if (newCodeBlockCode == null) {
@@ -241,6 +246,9 @@ class Updater {
     return info;
   }
 
+  RegExp supportedArgs = new RegExp(
+      r'^(diff-with|from|indent-by|path-base|region|replace|retain|title|to)$');
+
   void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
 
@@ -253,6 +261,9 @@ class Updater {
       final argName = match[2];
       final argValue = match[3];
       if (argName == null) continue;
+      if (!supportedArgs.hasMatch(argName)) {
+        _reportError('unrecognized instruction argument: $argName');
+      }
       info.args[argName] = argValue ?? '';
       _log.finer('>>> arg: $argName = "${info.args[argName]}"');
     }
@@ -510,6 +521,28 @@ class Updater {
 
               return '$dollars${m[argNum]}';
             }));
+  }
+
+  /*@nullable*/
+  CodeTransformer retainCodeTransformer(String retainExp) {
+    if (retainExp == null) return null;
+    Predicate<String> matcher;
+    if (retainExp.startsWith('/') && retainExp.endsWith('/')) {
+      final re = new RegExp(retainExp.substring(1, retainExp.length - 1));
+      _log.finest(' >> retain expr: "$retainExp" used as regexp $re');
+      matcher = (s) => re.hasMatch(s);
+    } else {
+      final stringToMatch = retainExp.startsWith(r'\/')
+          ? retainExp.substring(1) // TODO: process other escaped characters
+          : retainExp;
+      _log.finest(
+          ' >> retain expr: "$stringToMatch" is used as a string matcher');
+      matcher = (s) => s.contains(stringToMatch);
+    }
+    return (String code) {
+      final lines = code.split(_eol)..retainWhere(matcher);
+      return lines.join(_eol);
+    };
   }
 
   // void _warn(String msg) =>

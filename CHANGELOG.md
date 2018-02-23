@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0
+
+- Support `code-excerpt` `retain` attribute.
+- Report an error for unrecognized `code-excerpt` attributes.
+
 ## 0.5.3
 
 - Don't warn about instructions having a `class`
