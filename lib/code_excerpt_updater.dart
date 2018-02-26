@@ -247,7 +247,7 @@ class Updater {
   }
 
   RegExp supportedArgs = new RegExp(
-      r'^(diff-with|from|indent-by|path-base|region|replace|retain|title|to)$');
+      r'^(class|diff-with|from|indent-by|path-base|region|replace|retain|title|to)$');
 
   void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
