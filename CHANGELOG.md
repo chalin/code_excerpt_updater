@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0
+
+- Support `code-excerpt` `remove` attribute.
+
 ## 0.6.1
 
 - Add `class` as a recognized `code-excerpt` attribute.

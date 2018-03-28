@@ -61,9 +61,10 @@ Recognized arguments are:
 - `replace="/regexp/replacement/g;..."` defines one or more semi-colon separated [regular expression][]/replacement
   expression pairs for use in a global search-and-replace applied to the code excerpt.
   The replacement expression can contain capture group syntax `$&`, `$1`, `$2`, ... .
-- `retain="string"` will retain the lines, from the identified code excerpt file, that contain the given string;
-   `retain="/regexp/"` will retain the lines matching the given regular expression. To match a string starting
-   with a slash, escape it.
+- `remove="string|/regexp/"`: remove the lines, from the identified code excerpt file, which contain the given string
+   or match _regexp_. To match a string starting with a slash, escape it.
+- `retain="string|/regexp/"`: retain the lines, from the identified code excerpt file, which contain the given string
+   or match _regexp_. To match a string starting with a slash, escape it.
 - `indent-by` defines the number of spaces to be used to indent the code in the code block.
    (Default is no indentation.)
 - `path-base`, when provided, must be the only argument. Its use is described below in the second instruction form.
