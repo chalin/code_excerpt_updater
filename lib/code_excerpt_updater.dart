@@ -175,6 +175,7 @@ class Updater {
             infoPath,
             info.region,
             [
+              removeCodeTransformer(args['remove']),
               retainCodeTransformer(args['retain']),
               replaceCodeTransformer(args['replace']),
               fileAndCmdLineCodeTransformer,
@@ -247,7 +248,7 @@ class Updater {
   }
 
   RegExp supportedArgs = new RegExp(
-      r'^(class|diff-with|from|indent-by|path-base|region|replace|retain|title|to)$');
+      r'^(class|diff-with|from|indent-by|path-base|region|replace|remove|retain|title|to)$');
 
   void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
@@ -524,26 +525,43 @@ class Updater {
   }
 
   /*@nullable*/
-  CodeTransformer retainCodeTransformer(String retainExp) {
-    if (retainExp == null) return null;
+  CodeTransformer removeCodeTransformer(String arg) {
+    final Predicate<String> matcher = _retainArgToMatcher('remove', arg);
+    return matcher == null
+        ? null
+        : _lineMatcherToCodeTransformer(_not(matcher));
+  }
+
+  /*@nullable*/
+  CodeTransformer retainCodeTransformer(String arg) {
+    final Predicate<String> matcher = _retainArgToMatcher('retain', arg);
+    return matcher == null ? null : _lineMatcherToCodeTransformer(matcher);
+  }
+
+  CodeTransformer _lineMatcherToCodeTransformer(Predicate<String> p) =>
+      (String code) {
+        final lines = code.split(_eol)..retainWhere(p);
+        return lines.join(_eol);
+      };
+
+  Predicate<String> _retainArgToMatcher(String cmd, String arg) {
+    if (arg == null) return null;
     Predicate<String> matcher;
-    if (retainExp.startsWith('/') && retainExp.endsWith('/')) {
-      final re = new RegExp(retainExp.substring(1, retainExp.length - 1));
-      _log.finest(' >> retain expr: "$retainExp" used as regexp $re');
+    if (arg.startsWith('/') && arg.endsWith('/')) {
+      final re = new RegExp(arg.substring(1, arg.length - 1));
+      _log.finest(' >> $cmd arg: "$arg" used as regexp $re');
       matcher = (s) => re.hasMatch(s);
     } else {
-      final stringToMatch = retainExp.startsWith(r'\/')
-          ? retainExp.substring(1) // TODO: process other escaped characters
-          : retainExp;
-      _log.finest(
-          ' >> retain expr: "$stringToMatch" is used as a string matcher');
+      final stringToMatch = arg.startsWith(r'\/')
+          ? arg.substring(1) // TODO: process other escaped characters
+          : arg;
+      _log.finest(' >> $cmd arg: "$stringToMatch" is used as a string matcher');
       matcher = (s) => s.contains(stringToMatch);
     }
-    return (String code) {
-      final lines = code.split(_eol)..retainWhere(matcher);
-      return lines.join(_eol);
-    };
+    return matcher;
   }
+
+  Predicate<String> _not(Predicate<String> p) => (String s) => !p(s);
 
   // void _warn(String msg) =>
   //    _stderr.writeln('Warning: $_filePath:$lineNum $msg');

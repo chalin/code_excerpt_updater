@@ -136,6 +136,7 @@ void testsFromDefaultDir() {
       'fragment-indentation.md',
       'language-tour.md',
       'no_comment_prefix.md',
+      "remove.md",
       'retain.md',
     ];
 
