@@ -1,6 +1,4 @@
-## A basic Dart program
-
-The following code uses many of Dart’s most basic features:
+## Basic prettify tests
 
 <?code-excerpt "basic.dart (greeting)">
 {% prettify dart %}

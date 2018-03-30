@@ -26,6 +26,17 @@ CodeTransformer compose(CodeTransformer f, CodeTransformer g) =>
 /// `<?code-excerpt...?>` code fragments updated. Fragments are read from the
 /// [fragmentDirPath] directory, and diff sources from [srcDirPath].
 class Updater {
+  // The original RE matching both start and end markers of all kinds. Not currently used.
+  final codeBlockStartAndEndMarker =
+      new RegExp(r'^\s*(///?)?\s*(```|{%\s*(:?end)?prettify\s*(\w*)\s*%})?');
+
+  final codeBlockStartMarker =
+      new RegExp(r'^\s*(///?)?\s*(```|{%\s*prettify\s*(\w*)\s*%})?');
+
+  final codeBlockEndMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
+  final codeBlockEndPrettifyMarker =
+      new RegExp(r'^\s*(///?)?\s*({%\s*endprettify\s*%})?');
+
   final Logger _log = new Logger('CEU');
   final Stdout _stderr;
   final String fragmentDirPath;
@@ -152,10 +163,6 @@ class Updater {
   Iterable<String> _getUpdatedCodeBlock(InstrInfo info) {
     final args = info.args;
     final infoPath = info.path;
-
-    // TODO: only match on same prefix.
-    final codeBlockMarker =
-        new RegExp(r'^\s*(///?)?\s*(```|{%\s*(:?end)?prettify\s*(\w*)\s*%})?');
     final currentCodeBlock = <String>[];
     if (_lines.isEmpty) {
       _reportError('reached end of input, expect code block - "$infoPath"');
@@ -163,7 +170,7 @@ class Updater {
     }
     var line = _lines.removeAt(0);
     final openingCodeBlockLine = line;
-    final firstLineMatch = codeBlockMarker.firstMatch(line);
+    final firstLineMatch = codeBlockStartMarker.firstMatch(line);
     if (firstLineMatch == null || firstLineMatch[2] == null) {
       _reportError('code block should immediately follow <?code-excerpt?> - '
           '"$infoPath"\n  not: $line');
@@ -189,12 +196,15 @@ class Updater {
       // will be handled by the outer loop.
       return <String>[openingCodeBlockLine];
     }
+
+    final _codeBlockEndMarker = firstLineMatch[2].startsWith('`')
+        ? codeBlockEndMarker
+        : codeBlockEndPrettifyMarker;
     String closingCodeBlockLine;
     while (_lines.isNotEmpty) {
       line = _lines[0];
-      final match = codeBlockMarker.firstMatch(line);
+      final match = _codeBlockEndMarker.firstMatch(line);
       if (match == null) {
-        // TODO: it would be nice if we could print a line number too.
         _reportError('unterminated markdown code block '
             'for <?code-excerpt "$infoPath"?>');
         return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);

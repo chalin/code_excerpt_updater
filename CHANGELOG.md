@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.1
+
+- Strictly match code block marker start/end kinds.
+  E.g., now only `{% endprettify %}` is accepted as 
+  the end of a prettify code block (not a triple backtick).
+  In this way prettify blocks can contain triple backtick markers.
+
 ## 0.7.0
 
 - Support `code-excerpt` `remove` attribute.
