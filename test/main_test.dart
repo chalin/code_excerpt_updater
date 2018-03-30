@@ -122,6 +122,7 @@ void testsFromDefaultDir() {
       'no_comment_prefix.md',
       'no_path.md',
       'no_src.dart',
+      'prettify.md',
     ].map((fn) => p.join('no_change', fn));
 
     _testFileNames.forEach(_stdFileTest);
@@ -136,6 +137,7 @@ void testsFromDefaultDir() {
       'fragment-indentation.md',
       'language-tour.md',
       'no_comment_prefix.md',
+      'prettify.md',
       "remove.md",
       'retain.md',
     ];
