@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0
+
+- Deprecate processing instruction syntax without `?` before the closing `>`.
+- Support strip-whitespace syntax `{%-...-%}` for prettify tags.
+
 ## 0.7.2
 
 - Accept `{% prettify %}` with more than one argument.

@@ -5,7 +5,7 @@ other prettify tests.
 
 Prettify block containing triple-backticks:
 
-<?code-excerpt "backticks_in_api_doc.dart">
+<?code-excerpt "backticks_in_api_doc.dart"?>
 {% prettify html %}
 ...
 {% endprettify %}
