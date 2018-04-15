@@ -26,16 +26,11 @@ CodeTransformer compose(CodeTransformer f, CodeTransformer g) =>
 /// `<?code-excerpt...?>` code fragments updated. Fragments are read from the
 /// [fragmentDirPath] directory, and diff sources from [srcDirPath].
 class Updater {
-  // The original RE matching both start and end markers of all kinds. Not currently used.
-  final codeBlockStartAndEndMarker =
-      new RegExp(r'^\s*(///?)?\s*(```|{%\s*(:?end)?prettify\s*(\w*)\s*%})?');
-
   final codeBlockStartMarker =
-      new RegExp(r'^\s*(///?)?\s*(```|{%\s*prettify\s*(\w*)(\s+.*)?%})?');
-
+      new RegExp(r'^\s*(///?)?\s*(```|{%-?\s*prettify\s*(\w*)(\s+.*)?-?%})?');
   final codeBlockEndMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
   final codeBlockEndPrettifyMarker =
-      new RegExp(r'^\s*(///?)?\s*({%\s*endprettify\s*%})?');
+      new RegExp(r'^\s*(///?)?\s*({%-?\s*endprettify\s*-?%})?');
 
   final Logger _log = new Logger('CEU');
   final Stdout _stderr;
@@ -116,6 +111,9 @@ class Updater {
       if (match == null) {
         _reportError('invalid processing instruction: $line');
         continue;
+      }
+      if (!match[0].endsWith('?>')) {
+        _warn('processing instruction must be closed using "?>" syntax');
       }
       final info = _extractAndNormalizeArgs(match);
 
@@ -577,10 +575,12 @@ class Updater {
 
   Predicate<String> _not(Predicate<String> p) => (String s) => !p(s);
 
-  // void _warn(String msg) =>
-  //    _stderr.writeln('Warning: $_filePath:$lineNum $msg');
-  void _reportError(String msg) =>
-      _stderr.writeln('Error: $_filePath:$lineNum $msg');
+  void _warn(String msg) => _report('Warning', msg);
+
+  void _reportError(String msg) => _report('Error', msg);
+
+  void _report(String prefix, String msg) =>
+      _stderr.writeln('$prefix: $_filePath:$lineNum $msg');
 }
 
 class InstrInfo {

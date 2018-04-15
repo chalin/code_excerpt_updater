@@ -1,23 +1,35 @@
 ## Basic prettify tests
 
-### Prettify without arguments
+### Without arguments
 
-<?code-excerpt "quote.md">
+<?code-excerpt "quote.md"?>
 {% prettify %}
 ...
 {% endprettify %}
 
-### Prettify with arguments
+### With language argument
 
-<?code-excerpt "basic.dart (greeting)">
+<?code-excerpt "basic.dart (greeting)"?>
 {% prettify dart %}
 ...
 {% endprettify %}
 
-<?code-excerpt "no_region.html">
+<?code-excerpt "no_region.html"?>
 {% prettify html %}
 {% endprettify %}
 
-<?code-excerpt "no_region.html">
+### With other arguments
+
+<?code-excerpt "no_region.html"?>
 {% prettify html tag="code" %}
 {% endprettify %}
+
+### With strip-whitespace syntax
+
+<?code-excerpt "no_region.html"?>
+{% prettify html tag="code+br" -%}
+{%- endprettify %}
+
+<?code-excerpt "basic.dart (greeting)"?>
+{%- prettify dart -%}
+{%- endprettify -%}

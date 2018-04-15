@@ -8,7 +8,7 @@ Also see `../prettify.md` and `language-tour.md` in this test folder for other p
 
 Prettify block containing triple-backticks:
 
-<?code-excerpt "backticks_in_api_doc.dart">
+<?code-excerpt "backticks_in_api_doc.dart"?>
 {% prettify html %}
 /// ```html
 /// <h1>HTML is magical!</h1>
