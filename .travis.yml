@@ -1,13 +1,26 @@
 language: dart
+
+dart: [stable, dev]
+
 env:
   global:
     - LIBS="bin lib test"
 
-cache:
-  directories:
-    - $HOME/.pub-cache
+# TODO: find a way to exclude dartfmt for stable. I've tried many variants w/o success.
+#matrix:
+#  fast_finish: true
+#  allow_failures:
+#    - dart_task:
+#      - dartfmt: -n $LIBS
+#  exclude:
+#    - dart: stable
+#      dartfmt: -n $LIBS
 
 dart_task:
  - dartanalyzer: --fatal-warnings $LIBS
- - dartfmt: -n $LIBS
+ # - dartfmt: -n $LIBS
  - test
+
+cache:
+  directories:
+    - $HOME/.pub-cache

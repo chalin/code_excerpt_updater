@@ -1,8 +1,13 @@
 // ignore_for_file: type_annotate_public_apis
 
 /// String to int conversion
-int toInt(String s, {int radix = 10, int errorValue}) =>
-    int.parse(s, radix: radix, onError: (_) => errorValue);
+int toInt(String s, {int radix = 10, int errorValue}) {
+  try {
+    return int.parse(s, radix: radix);
+  } on FormatException {
+    return errorValue;
+  }
+}
 
 //-----------------------------------------------------------------------------
 // TODO: consider writing the following conversions as a string transformer.

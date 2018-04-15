@@ -75,10 +75,11 @@ class UpdaterCLI {
 
     int i = 0;
     if (args[_indentFlagName] != null) {
-      i = int.parse(args[_indentFlagName], onError: (_) => null);
-      if (i == null) {
+      try {
+        i = int.parse(args[_indentFlagName]);
+      } on FormatException {
         _printUsageAndExit(_parser,
-            msg: 'Integer indentation expected, not "${args[_indentFlagName]}');
+            msg: '$_indentFlagName: invalid value  "${args[_indentFlagName]}"');
       }
     }
     indentation = i;
