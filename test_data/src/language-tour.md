@@ -1,5 +1,14 @@
 ## Basic prettify tests
 
+### Prettify without arguments
+
+<?code-excerpt "quote.md">
+{% prettify %}
+...
+{% endprettify %}
+
+### Prettify with arguments
+
 <?code-excerpt "basic.dart (greeting)">
 {% prettify dart %}
 ...
@@ -9,7 +18,6 @@
 {% prettify html %}
 {% endprettify %}
 
-<?code-excerpt "quote.md">
-{% prettify %}
-...
+<?code-excerpt "no_region.html">
+{% prettify html tag="code" %}
 {% endprettify %}

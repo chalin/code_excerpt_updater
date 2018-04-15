@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.2
+
+- Accept `{% prettify %}` with more than one argument.
+
 ## 0.7.1
 
 - Strictly match code block marker start/end kinds.

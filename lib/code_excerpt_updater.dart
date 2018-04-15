@@ -31,7 +31,7 @@ class Updater {
       new RegExp(r'^\s*(///?)?\s*(```|{%\s*(:?end)?prettify\s*(\w*)\s*%})?');
 
   final codeBlockStartMarker =
-      new RegExp(r'^\s*(///?)?\s*(```|{%\s*prettify\s*(\w*)\s*%})?');
+      new RegExp(r'^\s*(///?)?\s*(```|{%\s*prettify\s*(\w*)(\s+.*)?%})?');
 
   final codeBlockEndMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
   final codeBlockEndPrettifyMarker =
@@ -63,8 +63,7 @@ class Updater {
     this.escapeNgInterpolation = true,
     this.globalReplaceExpr = '',
     Stdout err,
-  })
-      : _stderr = err ?? stderr {
+  }) : _stderr = err ?? stderr {
     Logger.root.level = Level.WARNING;
     Logger.root.onRecord.listen((LogRecord rec) {
       print('${rec.level.name}: ${rec.time}: ${rec.message}');
@@ -301,11 +300,16 @@ class Updater {
   int getIndentBy(String indentByAsString) {
     if (indentByAsString == null) return defaultIndentation;
     String errorMsg = '';
-    final result = int.parse(indentByAsString, onError: (s) {
-      errorMsg = 'error parsing integer value: $s';
-      return 0;
-    });
-    if (result < 0 || result > 100) errorMsg = 'integer out of range: $result';
+    var result = 0;
+    try {
+      result = int.parse(indentByAsString);
+    } on FormatException {
+      errorMsg = 'error parsing integer value: $indentByAsString';
+    }
+    if (result < 0 || result > 100) {
+      errorMsg = 'integer out of range: $result';
+      result = 0;
+    }
     if (errorMsg.isNotEmpty) {
       _reportError('<?code-excerpt?> indent-by: $errorMsg');
     }
