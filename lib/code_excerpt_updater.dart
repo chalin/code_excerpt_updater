@@ -26,10 +26,10 @@ CodeTransformer compose(CodeTransformer f, CodeTransformer g) =>
 /// `<?code-excerpt...?>` code fragments updated. Fragments are read from the
 /// [fragmentDirPath] directory, and diff sources from [srcDirPath].
 class Updater {
-  final codeBlockStartMarker =
+  final RegExp codeBlockStartMarker =
       new RegExp(r'^\s*(///?)?\s*(```|{%-?\s*prettify\s*(\w*)(\s+.*)?-?%})?');
-  final codeBlockEndMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
-  final codeBlockEndPrettifyMarker =
+  final RegExp codeBlockEndMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
+  final RegExp codeBlockEndPrettifyMarker =
       new RegExp(r'^\s*(///?)?\s*({%-?\s*endprettify\s*-?%})?');
 
   final Logger _log = new Logger('CEU');
@@ -99,7 +99,7 @@ class Updater {
 
   /// Regex matching code-excerpt processing instructions
   final RegExp procInstrRE = new RegExp(
-      r'^(\s*(///?\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+(\s*=\s*"[^"]*")?\s*)*)\??>');
+      r'^(\s*((?:///?|-|\*)\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+(\s*=\s*"[^"]*")?\s*)*)\??>');
 
   String _processLines() {
     final List<String> output = [];
@@ -246,6 +246,12 @@ class Updater {
         '>>> pIMatch: ${procInstrMatch.groupCount} - [${info.instruction}]');
     var i = 1;
     info.linePrefix = procInstrMatch[i++] ?? '';
+    // The instruction is the first line in a markdown list.
+    for(var c in ['-', '*']) {
+      if (!info.linePrefix.contains(c)) continue;
+      info.linePrefix = info.linePrefix.replaceFirst(c, ' ');
+      break; // It can't contain both characters
+    }
     i++; // final commentToken = match[i++];
     i++; // optional path+region
     final pathAndOptRegion = procInstrMatch[i++];

@@ -136,6 +136,7 @@ void testsFromDefaultDir() {
       'escape_ng_interpolation.md',
       'fragment-indentation.md',
       'language-tour.md',
+      'list.md',
       'no_comment_prefix.md',
       'prettify.md',
       "remove.md",
