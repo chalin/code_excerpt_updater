@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.1
+
+- Support `code-excerpt` instructions as the first line
+  in a markdown list that starts with `-` or `*`.
+
 ## 0.8.0
 
 - Deprecate processing instruction syntax without `?` before the closing `>`.
