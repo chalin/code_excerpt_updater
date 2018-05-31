@@ -7,8 +7,10 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
-import 'src/util.dart';
+import 'util.dart';
+import 'nullable.dart';
 
 const _eol = '\n';
 Function _listEq = const ListEquality().equals;
@@ -38,6 +40,7 @@ class Updater {
   final String srcDirPath;
   final int defaultIndentation;
   final bool escapeNgInterpolation;
+  final bool excerptsYaml;
   final String globalReplaceExpr;
 
   String _pathBase = ''; // init from <?code-excerpt path-base="..."?>
@@ -50,11 +53,12 @@ class Updater {
 
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
-  /// [err] defaults to [_stderr].
+  /// [err] defaults to [stderr].
   Updater(
     this.fragmentDirPath,
     this.srcDirPath, {
     this.defaultIndentation = 0,
+    this.excerptsYaml = false,
     this.escapeNgInterpolation = true,
     this.globalReplaceExpr = '',
     Stdout err,
@@ -247,7 +251,7 @@ class Updater {
     var i = 1;
     info.linePrefix = procInstrMatch[i++] ?? '';
     // The instruction is the first line in a markdown list.
-    for(var c in ['-', '*']) {
+    for (var c in ['-', '*']) {
       if (!info.linePrefix.contains(c)) continue;
       info.linePrefix = info.linePrefix.replaceFirst(c, ' ');
       break; // It can't contain both characters
@@ -406,6 +410,7 @@ class Updater {
       String relativePath, String region, CodeTransformer t) {
     String excerpt = _getExcerptAsString(relativePath, region);
     if (excerpt == null) return null; // Errors have been reported
+    _log.fine('>> excerpt before xform: "$excerpt"');
     if (t != null) excerpt = t(excerpt);
     final result = excerpt.split(_eol);
     // All excerpts are [_eol] terminated, so drop trailing blank lines
@@ -416,8 +421,47 @@ class Updater {
   /// Look for a fragment file under [fragmentDirPath], failing that look for a
   /// source file under [srcDirPath]. If a file is found return its content as
   /// a string. Otherwise, report an error and return null.
-  /*@nullable*/
-  String _getExcerptAsString(String relativePath, String region) {
+  @nullable
+  String _getExcerptAsString(String relativePath, String region) => excerptsYaml
+      ? _getExcerptAsStringFromYaml(relativePath, region)
+      : _getExcerptAsStringLegacy(relativePath, region);
+
+  @nullable
+  String _getExcerptAsStringFromYaml(String relativePath, String region) {
+    final ext = '.excerpt.yaml';
+    final excerptYamlPath =
+        p.join(fragmentDirPath, _pathBase, relativePath + ext);
+    Map<String, String> excerptsYaml;
+    try {
+      final contents = new File(excerptYamlPath).readAsStringSync();
+      excerptsYaml = loadYaml(contents, sourceUrl: excerptYamlPath);
+    } on FileSystemException {
+      // Fall through
+    }
+    if (region.isEmpty && excerptsYaml == null) {
+      // Continue: search for source file.
+    } else if (excerptsYaml == null) {
+      _reportError('cannot read file "$excerptYamlPath"');
+      return null;
+    } else if (excerptsYaml[region] == null) {
+      _reportError('cannot read file "$excerptYamlPath"');
+      return null;
+    } else {
+      return excerptsYaml[region].trimRight();
+    }
+
+    // ...
+    final filePath = p.join(fragmentDirPath, _pathBase, relativePath);
+    try {
+      return new File(filePath).readAsStringSync();
+    } on FileSystemException {
+      _reportError('excerpt not found for "$relativePath"');
+      return null;
+    }
+  }
+
+  @nullable
+  String _getExcerptAsStringLegacy(String relativePath, String region) {
     final fragExtension = '.txt';
     var file = relativePath + fragExtension;
     if (region.isNotEmpty) {

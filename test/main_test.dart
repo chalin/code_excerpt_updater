@@ -3,7 +3,7 @@
 
 import 'dart:io';
 
-import 'package:code_excerpt_updater/code_excerpt_updater.dart';
+import 'package:code_excerpt_updater/src/code_excerpt_updater.dart';
 import 'package:path/path.dart' as p;
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
@@ -71,6 +71,7 @@ void main() {
   group('Default indentation:', testDefaultIndentation);
   group('Disable escape ng interpolation:', testNoEscapeNgInterpolation);
   group('Excerpt from src:', testSrcButNoFrag);
+  group('Excerpt YAML:', testExcerptYaml);
 
   test('Replace command line option: invalid expression', () {
     try {
@@ -196,4 +197,16 @@ void testSrcButNoFrag() {
   });
 
   _stdFileTest('src_but_no_frag.md');
+}
+
+void testExcerptYaml() {
+  setUp(() {
+    updater = new Updater(
+      p.join(_testDir, 'excerpt_yaml'),
+      p.join(_testDir, 'excerpt_yaml'),
+      excerptsYaml: true,
+    );
+  });
+
+  _stdFileTest('excerpt_yaml.md');
 }
