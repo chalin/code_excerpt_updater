@@ -208,5 +208,10 @@ void testExcerptYaml() {
     );
   });
 
-  _stdFileTest('excerpt_yaml.md');
+  final _testFileNames = [
+    'excerpt_yaml.md',
+    'plaster.md',
+  ];
+
+  _testFileNames.forEach(_stdFileTest);
 }

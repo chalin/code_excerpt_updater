@@ -3,6 +3,7 @@
 ## 0.9.0
 
 - Support reading excerpts from `*.excerpt.yaml` files when the new `--yaml` flag is used.
+- Support `plaster` attributes. For legacy excerpts, only `plaster="none"` is recognized.
 
 ## 0.8.1
 
