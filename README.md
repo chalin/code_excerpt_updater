@@ -30,6 +30,7 @@ Usage: code_excerpt_updater [OPTIONS] file_or_directory...
                                       (defaults to on)
 
     --replace                         REPLACE-EXPRESSIONs. Global replace argument. See README for syntax.
+    --yaml                            Read excerpts from .excerpt.yaml files
 ```
 
 For example, you could run the updater over
@@ -68,6 +69,12 @@ Recognized arguments are:
 - `indent-by` defines the number of spaces to be used to indent the code in the code block.
    (Default is no indentation.)
 - `path-base`, when provided, must be the only argument. Its use is described below in the second instruction form.
+- `plaster="..."` determines how plaster marker lines are handled in excerpts. When set to "none", the plaster marker
+  lines are removed. Otherwise, the attribute value defines a plaster template, possibly containing `$defaultPlaster`.
+  Examples: `plaster="/* $defaultPlaster */"`, `plaster="/* add your code here */"`.
+  When using legacy excerpts, the only supported value of this attribute is "none".
+  The default plaster is `···`, contained in a language-specific comment that is determined from the excerpt directive.
+  The language is the code-block language, if specified, otherwise it is taken to be the excerpt path extension.
 
 Notes:
 - The `<?code-excerpt?>` instruction can optionally be preceded by an single-line comment

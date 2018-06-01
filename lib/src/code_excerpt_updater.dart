@@ -7,8 +7,12 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
-import 'src/util.dart';
+import 'util.dart';
+import 'nullable.dart';
+
+const defaultPlaster = '···';
 
 const _eol = '\n';
 Function _listEq = const ListEquality().equals;
@@ -38,6 +42,7 @@ class Updater {
   final String srcDirPath;
   final int defaultIndentation;
   final bool escapeNgInterpolation;
+  final bool excerptsYaml;
   final String globalReplaceExpr;
 
   String _pathBase = ''; // init from <?code-excerpt path-base="..."?>
@@ -50,11 +55,12 @@ class Updater {
 
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
 
-  /// [err] defaults to [_stderr].
+  /// [err] defaults to [stderr].
   Updater(
     this.fragmentDirPath,
     this.srcDirPath, {
     this.defaultIndentation = 0,
+    this.excerptsYaml = false,
     this.escapeNgInterpolation = true,
     this.globalReplaceExpr = '',
     Stdout err,
@@ -179,6 +185,8 @@ class Updater {
             infoPath,
             info.region,
             [
+              plasterCodeTransformer(args['plaster'],
+                  _determineCodeLang(openingCodeBlockLine, info.path)),
               removeCodeTransformer(args['remove']),
               retainCodeTransformer(args['retain']),
               replaceCodeTransformer(args['replace']),
@@ -247,7 +255,7 @@ class Updater {
     var i = 1;
     info.linePrefix = procInstrMatch[i++] ?? '';
     // The instruction is the first line in a markdown list.
-    for(var c in ['-', '*']) {
+    for (var c in ['-', '*']) {
       if (!info.linePrefix.contains(c)) continue;
       info.linePrefix = info.linePrefix.replaceFirst(c, ' ');
       break; // It can't contain both characters
@@ -261,7 +269,7 @@ class Updater {
   }
 
   RegExp supportedArgs = new RegExp(
-      r'^(class|diff-with|from|indent-by|path-base|region|replace|remove|retain|title|to)$');
+      r'^(class|diff-with|from|indent-by|path-base|plaster|region|replace|remove|retain|title|to)$');
 
   void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
@@ -320,7 +328,7 @@ class Updater {
     return result;
   }
 
-  /*@nullable*/
+  @nullable
   Iterable<String> _getDiff(String relativeSrcPath1, Map<String, String> args) {
     final relativeSrcPath2 = args['diff-with'];
     final pathPrefix = p.join(srcDirPath, _pathBase);
@@ -401,11 +409,12 @@ class Updater {
     return '${match[1]} $path';
   }
 
-  /*@nullable*/
+  @nullable
   Iterable<String> _getExcerpt(
       String relativePath, String region, CodeTransformer t) {
     String excerpt = _getExcerptAsString(relativePath, region);
     if (excerpt == null) return null; // Errors have been reported
+    _log.fine('>> excerpt before xform: "$excerpt"');
     if (t != null) excerpt = t(excerpt);
     final result = excerpt.split(_eol);
     // All excerpts are [_eol] terminated, so drop trailing blank lines
@@ -416,8 +425,47 @@ class Updater {
   /// Look for a fragment file under [fragmentDirPath], failing that look for a
   /// source file under [srcDirPath]. If a file is found return its content as
   /// a string. Otherwise, report an error and return null.
-  /*@nullable*/
-  String _getExcerptAsString(String relativePath, String region) {
+  @nullable
+  String _getExcerptAsString(String relativePath, String region) => excerptsYaml
+      ? _getExcerptAsStringFromYaml(relativePath, region)
+      : _getExcerptAsStringLegacy(relativePath, region);
+
+  @nullable
+  String _getExcerptAsStringFromYaml(String relativePath, String region) {
+    final ext = '.excerpt.yaml';
+    final excerptYamlPath =
+        p.join(fragmentDirPath, _pathBase, relativePath + ext);
+    Map<String, String> excerptsYaml;
+    try {
+      final contents = new File(excerptYamlPath).readAsStringSync();
+      excerptsYaml = loadYaml(contents, sourceUrl: excerptYamlPath);
+    } on FileSystemException {
+      // Fall through
+    }
+    if (region.isEmpty && excerptsYaml == null) {
+      // Continue: search for source file.
+    } else if (excerptsYaml == null) {
+      _reportError('cannot read file "$excerptYamlPath"');
+      return null;
+    } else if (excerptsYaml[region] == null) {
+      _reportError('cannot read file "$excerptYamlPath"');
+      return null;
+    } else {
+      return excerptsYaml[region].trimRight();
+    }
+
+    // ...
+    final filePath = p.join(fragmentDirPath, _pathBase, relativePath);
+    try {
+      return new File(filePath).readAsStringSync();
+    } on FileSystemException {
+      _reportError('excerpt not found for "$relativePath"');
+      return null;
+    }
+  }
+
+  @nullable
+  String _getExcerptAsStringLegacy(String relativePath, String region) {
     final fragExtension = '.txt';
     var file = relativePath + fragExtension;
     if (region.isNotEmpty) {
@@ -470,7 +518,52 @@ class Updater {
   final _matchDollarNumRE = new RegExp(r'(\$+)(&|\d*)');
   final _endRE = new RegExp(r'^g;?\s*$');
 
-  /*@nullable*/
+  /// Replace raw plaster markers in excerpt with [plasterTemplate].
+  /// Note that plaster line indentation is not affected.
+  ///
+  /// If [plasterTemplate] is 'none' then plasters are removed.
+  /// If [plasterTemplate] is null then a default [lang] specific plaster
+  /// template is used.
+  @nullable
+  CodeTransformer plasterCodeTransformer(String plasterTemplate, String lang) {
+    if (plasterTemplate == 'none') return removeCodeTransformer(defaultPlaster);
+    if (!excerptsYaml) return null;
+
+    final template =
+        plasterTemplate?.replaceAll(r'$defaultPlaster', defaultPlaster) ??
+            _plasterTemplateFor(lang);
+    return template == null
+        ? null
+        : _replaceCodeTransformer(defaultPlaster, template);
+  }
+
+  @nullable
+  String _plasterTemplateFor(String lang) {
+    if (lang == null) return null;
+
+    switch (lang) {
+      case 'css':
+        return '/* $defaultPlaster */';
+
+      case 'html':
+        return '<!-- $defaultPlaster -->';
+
+      case 'dart':
+      case 'js':
+      case 'scss':
+      case 'ts':
+        return '// $defaultPlaster';
+
+      case 'yaml':
+        return '# $defaultPlaster';
+
+      case 'diff':
+      default:
+        return null;
+    }
+  }
+
+  @nullable
   CodeTransformer replaceCodeTransformer(String replaceExp) {
     dynamic _reportErr([String extraInfo = '']) =>
         _reportError('invalid replace attribute ("$replaceExp"); ' +
@@ -512,7 +605,7 @@ class Updater {
     return transformers.fold(null, compose);
   }
 
-  /*@nullable*/
+  @nullable
   CodeTransformer _replaceCodeTransformer(String re, String _replacement) {
     final replacement = encodeSlashChar(_replacement);
     _log.finest(' >> replacement expr: $replacement');
@@ -542,7 +635,7 @@ class Updater {
             }));
   }
 
-  /*@nullable*/
+  @nullable
   CodeTransformer removeCodeTransformer(String arg) {
     final Predicate<String> matcher = _retainArgToMatcher('remove', arg);
     return matcher == null
@@ -550,7 +643,7 @@ class Updater {
         : _lineMatcherToCodeTransformer(_not(matcher));
   }
 
-  /*@nullable*/
+  @nullable
   CodeTransformer retainCodeTransformer(String arg) {
     final Predicate<String> matcher = _retainArgToMatcher('retain', arg);
     return matcher == null ? null : _lineMatcherToCodeTransformer(matcher);
@@ -587,6 +680,17 @@ class Updater {
 
   void _report(String prefix, String msg) =>
       _stderr.writeln('$prefix: $_filePath:$lineNum $msg');
+
+  final RegExp _codeBlockLangSpec = new RegExp(r'(?:```|prettify\s+)(\w+)');
+
+  String _determineCodeLang(String openingCodeBlockLine, String path) {
+    final match = _codeBlockLangSpec.firstMatch(openingCodeBlockLine);
+    if (match != null) return match[1];
+
+    var ext = p.extension(path);
+    if (ext.startsWith('.')) ext = ext.substring(1);
+    return ext;
+  }
 }
 
 class InstrInfo {

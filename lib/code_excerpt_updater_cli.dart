@@ -4,7 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'code_excerpt_updater.dart';
+import 'package:code_excerpt_updater/src/code_excerpt_updater.dart';
 import 'package:args/args.dart';
 
 const _commandName = 'code_excerpt_updater';
@@ -18,6 +18,8 @@ class UpdaterCLI {
   static final _inPlaceFlagName = 'write-in-place';
   static final _indentFlagName = 'indentation';
   static final _srcDirPathFlagName = 'src-dir-path';
+  static final _yamlFlagName = 'yaml';
+
   static final _defaultPath =
       '(defaults to "", that is, the current working directory)';
   static final _replaceName = 'replace';
@@ -45,9 +47,12 @@ class UpdaterCLI {
         help: 'Escape Angular interpolation syntax {{...}} as {!{...}!}')
     ..addOption(_replaceName,
         help:
-            'REPLACE-EXPRESSIONs. Global replace argument. See README for syntax.');
+            'REPLACE-EXPRESSIONs. Global replace argument. See README for syntax.')
+    ..addFlag(_yamlFlagName,
+        negatable: false, help: 'Read excerpts from .excerpt.yaml files');
 
   bool escapeNgInterpolation;
+  bool excerptsYaml;
   String fragmentDirPath, srcDirPath, replaceExpr;
   bool inPlaceFlag;
   int indentation;
@@ -92,6 +97,7 @@ class UpdaterCLI {
     inPlaceFlag = args[_inPlaceFlagName];
     replaceExpr = args[_replaceName] ?? '';
     srcDirPath = args[_srcDirPathFlagName] ?? '';
+    excerptsYaml = args[_yamlFlagName] ?? false;
 
     argsAreValid = true;
   }
@@ -155,6 +161,7 @@ class UpdaterCLI {
       defaultIndentation: indentation,
       escapeNgInterpolation: escapeNgInterpolation,
       globalReplaceExpr: replaceExpr,
+      excerptsYaml: excerptsYaml,
     );
     final result = updater.generateUpdatedFile(filePath);
 
