@@ -189,9 +189,9 @@ class Updater {
             info.region,
             [
               plasterCodeTransformer(
-                  args['plaster'] ??
-                      filePlasterTemplate ??
-                      globalPlasterTemplate,
+                  args.containsKey('plaster')
+                      ? args['plaster']
+                      : filePlasterTemplate ?? globalPlasterTemplate,
                   _determineCodeLang(openingCodeBlockLine, info.path)),
               removeCodeTransformer(args['remove']),
               retainCodeTransformer(args['retain']),
@@ -282,16 +282,18 @@ class Updater {
     if (argsAsString == null) return;
     String restOfArgs = argsAsString.trim();
     _log.fine('>> __extractAndNormalizeNamedArgs: [$restOfArgs]');
-    while(restOfArgs.isNotEmpty) {
+    while (restOfArgs.isNotEmpty) {
       final match = argRegExp.firstMatch(restOfArgs);
       if (match == null) {
-        _reportError('instruction argument parsing failure at/around: $restOfArgs');
+        _reportError(
+            'instruction argument parsing failure at/around: $restOfArgs');
         break;
       }
       final argName = match[1];
       final argValue = match[3];
       info.args[argName] = argValue;
-      _log.finer('  >> arg: $argName = ${argValue == null ? argValue : '"$argValue"'}');
+      _log.finer(
+          '  >> arg: $argName = ${argValue == null ? argValue : '"$argValue"'}');
       restOfArgs = restOfArgs.substring(match[0].length);
     }
     _processPathAndRegionArgs(info);

@@ -19,6 +19,13 @@ abc
 def
 ```
 
+<?code-excerpt "plaster.txt" plaster?>
+```
+abc
+···
+def
+```
+
 <?code-excerpt plaster?>
 
 <?code-excerpt "plaster.txt"?>

@@ -14,6 +14,10 @@
 ```
 ```
 
+<?code-excerpt "plaster.txt" plaster?>
+```
+```
+
 <?code-excerpt plaster?>
 
 <?code-excerpt "plaster.txt"?>
