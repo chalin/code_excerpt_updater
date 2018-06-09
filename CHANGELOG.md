@@ -2,7 +2,8 @@
 
 ## 0.9.1
 
-- Support globally set plaster template using command line option `--plaster TEMPLATE`.
+- Support globally set plaster template using command line option `--plaster TEMPLATE`,
+  and plaster as a set instruction.
 
 ## 0.9.0
 

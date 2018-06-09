@@ -8,7 +8,15 @@
 
 ### Remove plaster
 
-<?code-excerpt "plaster.txt" plaster="none"?>
+<?code-excerpt plaster="none"?>
+
+<?code-excerpt "plaster.txt"?>
+```
+```
+
+<?code-excerpt plaster?>
+
+<?code-excerpt "plaster.txt"?>
 ```
 ```
 

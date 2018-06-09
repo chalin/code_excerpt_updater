@@ -11,9 +11,20 @@ var scope = 'world';
 
 ### Remove plaster
 
-<?code-excerpt "plaster.txt" plaster="none"?>
+<?code-excerpt plaster="none"?>
+
+<?code-excerpt "plaster.txt"?>
 ```
 abc
+def
+```
+
+<?code-excerpt plaster?>
+
+<?code-excerpt "plaster.txt"?>
+```
+abc
+// Insert your code here ···
 def
 ```
 
