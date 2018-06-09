@@ -17,6 +17,7 @@ class UpdaterCLI {
   static final _fragmentDirPathFlagName = 'fragment-dir-path';
   static final _inPlaceFlagName = 'write-in-place';
   static final _indentFlagName = 'indentation';
+  static final _plasterFlagName = 'plaster';
   static final _srcDirPathFlagName = 'src-dir-path';
   static final _yamlFlagName = 'yaml';
 
@@ -27,33 +28,37 @@ class UpdaterCLI {
   final _parser = new ArgParser()
     ..addOption(_fragmentDirPathFlagName,
         abbr: 'p',
-        help: 'PATH to directory containing code fragment files\n$_defaultPath')
-    ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help')
+        help: 'PATH to directory containing code fragment files\n$_defaultPath.')
+    ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help.')
     ..addOption(_indentFlagName,
         abbr: 'i',
         defaultsTo: '0',
         help:
-            'NUMBER. Default number of spaces to use as indentation for code inside code blocks')
+            'NUMBER. Default number of spaces to use as indentation for code inside code blocks.')
     ..addOption(_srcDirPathFlagName,
         abbr: 'q',
-        help: 'PATH to directory containing code used in diffs\n$_defaultPath')
+        help: 'PATH to directory containing code used in diffs\n$_defaultPath.')
     ..addFlag(_inPlaceFlagName,
         abbr: 'w',
         defaultsTo: false,
         negatable: false,
-        help: 'Write updates to files in-place')
+        help: 'Write updates to files in-place.')
     ..addFlag(_escapeNgInterpolationFlagName,
         defaultsTo: true,
-        help: 'Escape Angular interpolation syntax {{...}} as {!{...}!}')
+        help: 'Escape Angular interpolation syntax {{...}} as {!{...}!}.')
+    ..addOption(_plasterFlagName,
+        help: 'TEMPLATE. Default plaster template to use for all files.\n'
+        'For example, "// Insert your code here"; use "none" to remove plasters.'
+    )
     ..addOption(_replaceName,
         help:
             'REPLACE-EXPRESSIONs. Global replace argument. See README for syntax.')
     ..addFlag(_yamlFlagName,
-        negatable: false, help: 'Read excerpts from .excerpt.yaml files');
+        negatable: false, help: 'Read excerpts from *.excerpt.yaml files.');
 
   bool escapeNgInterpolation;
   bool excerptsYaml;
-  String fragmentDirPath, srcDirPath, replaceExpr;
+  String fragmentDirPath, plasterTemplate, replaceExpr, srcDirPath;
   bool inPlaceFlag;
   int indentation;
   List<String> pathsToFileOrDir = [];
@@ -93,11 +98,12 @@ class UpdaterCLI {
       _printUsageAndExit(_parser, msg: 'Expecting one or more path arguments');
 
     escapeNgInterpolation = args[_escapeNgInterpolationFlagName];
+    excerptsYaml = args[_yamlFlagName] ?? false;
     fragmentDirPath = args[_fragmentDirPathFlagName] ?? '';
     inPlaceFlag = args[_inPlaceFlagName];
+    plasterTemplate = args[_plasterFlagName];
     replaceExpr = args[_replaceName] ?? '';
     srcDirPath = args[_srcDirPathFlagName] ?? '';
-    excerptsYaml = args[_yamlFlagName] ?? false;
 
     argsAreValid = true;
   }
@@ -160,6 +166,7 @@ class UpdaterCLI {
       srcDirPath,
       defaultIndentation: indentation,
       escapeNgInterpolation: escapeNgInterpolation,
+      globalPlasterTemplate: plasterTemplate,
       globalReplaceExpr: replaceExpr,
       excerptsYaml: excerptsYaml,
     );

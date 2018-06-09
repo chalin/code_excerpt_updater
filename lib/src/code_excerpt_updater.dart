@@ -44,6 +44,7 @@ class Updater {
   final bool escapeNgInterpolation;
   final bool excerptsYaml;
   final String globalReplaceExpr;
+  final String globalPlasterTemplate;
 
   String _pathBase = ''; // init from <?code-excerpt path-base="..."?>
   CodeTransformer _globalCodeTransformer;
@@ -63,6 +64,7 @@ class Updater {
     this.excerptsYaml = false,
     this.escapeNgInterpolation = true,
     this.globalReplaceExpr = '',
+    this.globalPlasterTemplate,
     Stdout err,
   }) : _stderr = err ?? stderr {
     Logger.root.level = Level.WARNING;
@@ -185,7 +187,7 @@ class Updater {
             infoPath,
             info.region,
             [
-              plasterCodeTransformer(args['plaster'],
+              plasterCodeTransformer(args['plaster'] ?? globalPlasterTemplate,
                   _determineCodeLang(openingCodeBlockLine, info.path)),
               removeCodeTransformer(args['remove']),
               retainCodeTransformer(args['retain']),
