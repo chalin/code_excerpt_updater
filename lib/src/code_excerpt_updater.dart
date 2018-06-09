@@ -44,6 +44,8 @@ class Updater {
   final bool escapeNgInterpolation;
   final bool excerptsYaml;
   final String globalReplaceExpr;
+  final String globalPlasterTemplate;
+  String filePlasterTemplate;
 
   String _pathBase = ''; // init from <?code-excerpt path-base="..."?>
   CodeTransformer _globalCodeTransformer;
@@ -63,6 +65,7 @@ class Updater {
     this.excerptsYaml = false,
     this.escapeNgInterpolation = true,
     this.globalReplaceExpr = '',
+    this.globalPlasterTemplate,
     Stdout err,
   }) : _stderr = err ?? stderr {
     Logger.root.level = Level.WARNING;
@@ -140,21 +143,21 @@ class Updater {
       }
     }
 
-    if (info.args['path-base'] != null) {
-      _pathBase = info.args['path-base'];
+    if (info.args.containsKey('path-base')) {
+      _pathBase = info.args['path-base'] ?? '';
       _checkForMoreThan1ArgErr();
-    } else if (info.args['replace'] != null) {
-      if (info.args['replace'].isEmpty) {
-        _fileGlobalCodeTransformer = null;
-      } else {
-        _fileGlobalCodeTransformer =
-            replaceCodeTransformer(info.args['replace']);
-      }
+    } else if (info.args.containsKey('replace')) {
+      _fileGlobalCodeTransformer = info.args['replace']?.isNotEmpty ?? false
+          ? replaceCodeTransformer(info.args['replace'])
+          : null;
+      _checkForMoreThan1ArgErr();
+    } else if (info.args.containsKey('plaster')) {
+      filePlasterTemplate = info.args['plaster'];
       _checkForMoreThan1ArgErr();
     } else if (info.args.keys.length == 0 ||
         info.args.keys.length == 1 && info.args['class'] != null) {
       // Ignore empty instruction, other tools process them.
-    } else if (info.args.keys.length == 1 && info.args['title'] != null) {
+    } else if (info.args.keys.length == 1 && info.args.containsKey('title')) {
       // Only asking for a title is ok.
     } else {
       _log.warning('instruction ignored: ${info.instruction}');
@@ -185,7 +188,10 @@ class Updater {
             infoPath,
             info.region,
             [
-              plasterCodeTransformer(args['plaster'],
+              plasterCodeTransformer(
+                  args.containsKey('plaster')
+                      ? args['plaster']
+                      : filePlasterTemplate ?? globalPlasterTemplate,
                   _determineCodeLang(openingCodeBlockLine, info.path)),
               removeCodeTransformer(args['remove']),
               retainCodeTransformer(args['retain']),
@@ -270,24 +276,25 @@ class Updater {
 
   RegExp supportedArgs = new RegExp(
       r'^(class|diff-with|from|indent-by|path-base|plaster|region|replace|remove|retain|title|to)$');
+  RegExp argRegExp = new RegExp(r'^([-\w]+)\s*(=\s*"(.*?)"\s*|\b)\s*');
 
   void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
-
-    final RegExp procInstrArgRE = new RegExp(r'(\s*([-\w]+)=")(.*?)"\s*');
-    final matches = procInstrArgRE.allMatches(argsAsString);
-    _log.finer('>>> ${matches.length} args with values in $argsAsString');
-
-    for (final match in matches) {
-      _log.finer('>>> arg: "${match[0]}"');
-      final argName = match[2];
-      final argValue = match[3];
-      if (argName == null) continue;
-      if (!supportedArgs.hasMatch(argName)) {
-        _reportError('unrecognized instruction argument: $argName');
+    String restOfArgs = argsAsString.trim();
+    _log.fine('>> __extractAndNormalizeNamedArgs: [$restOfArgs]');
+    while (restOfArgs.isNotEmpty) {
+      final match = argRegExp.firstMatch(restOfArgs);
+      if (match == null) {
+        _reportError(
+            'instruction argument parsing failure at/around: $restOfArgs');
+        break;
       }
-      info.args[argName] = argValue ?? '';
-      _log.finer('>>> arg: $argName = "${info.args[argName]}"');
+      final argName = match[1];
+      final argValue = match[3];
+      info.args[argName] = argValue;
+      _log.finer(
+          '  >> arg: $argName = ${argValue == null ? argValue : '"$argValue"'}');
+      restOfArgs = restOfArgs.substring(match[0].length);
     }
     _processPathAndRegionArgs(info);
   }
@@ -716,4 +723,7 @@ class InstrInfo {
   String get region => args['region'] ?? _region ?? '';
 
   final Map<String, String> args = {};
+
+  @override
+  String toString() => 'InstrInfo: $linePrefix$instruction; args=$args';
 }

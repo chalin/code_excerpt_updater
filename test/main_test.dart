@@ -200,18 +200,34 @@ void testSrcButNoFrag() {
 }
 
 void testExcerptYaml() {
-  setUp(() {
-    updater = new Updater(
-      p.join(_testDir, 'excerpt_yaml'),
-      p.join(_testDir, 'excerpt_yaml'),
-      excerptsYaml: true,
-    );
+  group('defaults:', () {
+    setUp(() {
+      updater = new Updater(
+        p.join(_testDir, 'excerpt_yaml'),
+        p.join(_testDir, 'excerpt_yaml'),
+        excerptsYaml: true,
+      );
+    });
+
+    final _testFileNames = [
+      'excerpt_yaml.md',
+      'plaster.md',
+    ];
+
+    _testFileNames.forEach(_stdFileTest);
   });
 
-  final _testFileNames = [
-    'excerpt_yaml.md',
-    'plaster.md',
-  ];
+  group('globally change default plaster', () {
 
-  _testFileNames.forEach(_stdFileTest);
+    setUp(() {
+      updater = new Updater(
+        p.join(_testDir, 'excerpt_yaml'),
+        p.join(_testDir, 'excerpt_yaml'),
+        excerptsYaml: true,
+        globalPlasterTemplate: r'// Insert your code here $defaultPlaster',
+      );
+    });
+
+    _stdFileTest('plaster-global-option.md');
+  });
 }

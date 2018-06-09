@@ -16,21 +16,24 @@ pub global activate --source git https://github.com/chalin/code_excerpt_updater.
 Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
 -p, --fragment-dir-path               PATH to directory containing code fragment files
-                                      (defaults to "", that is, the current working directory)
+                                      (defaults to "", that is, the current working directory).
 
--h, --help                            Show command help
--i, --indentation                     NUMBER. Default number of spaces to use as indentation for code inside code blocks
+-h, --help                            Show command help.
+-i, --indentation                     NUMBER. Default number of spaces to use as indentation for code inside code blocks.
                                       (defaults to "0")
 
 -q, --src-dir-path                    PATH to directory containing code used in diffs
-                                      (defaults to "", that is, the current working directory)
+                                      (defaults to "", that is, the current working directory).
 
--w, --write-in-place                  Write updates to files in-place
-    --[no-]escape-ng-interpolation    Escape Angular interpolation syntax {{...}} as {!{...}!}
+-w, --write-in-place                  Write updates to files in-place.
+    --[no-]escape-ng-interpolation    Escape Angular interpolation syntax {{...}} as {!{...}!}.
                                       (defaults to on)
 
+    --plaster                         TEMPLATE. Default plaster template to use for all files.
+                                      For example, "// Insert your code here"; use "none" to remove plasters.
+
     --replace                         REPLACE-EXPRESSIONs. Global replace argument. See README for syntax.
-    --yaml                            Read excerpts from .excerpt.yaml files
+    --yaml                            Read excerpts from *.excerpt.yaml files.
 ```
 
 For example, you could run the updater over
