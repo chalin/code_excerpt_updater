@@ -12,10 +12,14 @@ Future<Null> main(List<String> args) async {
   updater.setArgs(args);
   if (!updater.argsAreValid) return;
   await updater.processArgs();
-  if (exitCode == 0) {
-    final msg = 'Processed ${updater.numFiles} Dart/Jade/Markdown files: '
-        '${updater.numUpdatedFrag} out of '
-        '${updater.numSrcDirectives} fragments needed updating.';
-    print(msg);
-  }
+  final msg = 'Processed ${updater.numFiles} Dart/Jade/Markdown files: '
+      '${updater.numUpdatedFrag} out of '
+      '${updater.numSrcDirectives} fragments needed updating.';
+  print(msg);
+  final _exitCode = updater.numErrors > 0
+      ? updater.numErrors
+      : updater.failOnRefresh && updater.numUpdatedFrag > 0
+          ? updater.numUpdatedFrag
+          : 0;
+  exitCode = _exitCode;
 }

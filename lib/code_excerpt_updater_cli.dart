@@ -14,6 +14,7 @@ final _validExt = new RegExp(r'\.(dart|jade|md)$');
 /// using [Updater]. See this command's help for CLI argument details.
 class UpdaterCLI {
   static final _escapeNgInterpolationFlagName = 'escape-ng-interpolation';
+  static final _failOnRefresh = 'fail-on-refresh';
   static final _fragmentDirPathFlagName = 'fragment-dir-path';
   static final _inPlaceFlagName = 'write-in-place';
   static final _indentFlagName = 'indentation';
@@ -26,6 +27,8 @@ class UpdaterCLI {
   static final _replaceName = 'replace';
 
   final _parser = new ArgParser()
+    ..addFlag(_failOnRefresh, negatable: false, help: 'Report a non-zero '
+    'exit code if a fragment is refreshed.')
     ..addOption(_fragmentDirPathFlagName,
         abbr: 'p',
         help: 'PATH to directory containing code fragment files\n$_defaultPath.')
@@ -58,6 +61,7 @@ class UpdaterCLI {
 
   bool escapeNgInterpolation;
   bool excerptsYaml;
+  bool failOnRefresh;
   String fragmentDirPath, plasterTemplate, replaceExpr, srcDirPath;
   bool inPlaceFlag;
   int indentation;
@@ -65,6 +69,7 @@ class UpdaterCLI {
 
   bool argsAreValid = false;
 
+  int numErrors = 0;
   int numFiles = 0;
   int numSrcDirectives = 0;
   int numUpdatedFrag = 0;
@@ -99,6 +104,7 @@ class UpdaterCLI {
 
     escapeNgInterpolation = args[_escapeNgInterpolationFlagName];
     excerptsYaml = args[_yamlFlagName] ?? false;
+    failOnRefresh = args[_failOnRefresh] ?? false;
     fragmentDirPath = args[_fragmentDirPathFlagName] ?? '';
     inPlaceFlag = args[_inPlaceFlagName];
     plasterTemplate = args[_plasterFlagName];
@@ -155,6 +161,7 @@ class UpdaterCLI {
       await _updateFile(filePath);
       numFiles++;
     } catch (e) {
+      numErrors++;
       stderr.writeln('Error processing "$filePath": $e');
       exitCode = 2;
     }
@@ -172,6 +179,7 @@ class UpdaterCLI {
     );
     final result = updater.generateUpdatedFile(filePath);
 
+    numErrors += updater.numErrors;
     numSrcDirectives += updater.numSrcDirectives;
     numUpdatedFrag += updater.numUpdatedFrag;
 

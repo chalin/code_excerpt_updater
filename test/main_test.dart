@@ -51,9 +51,11 @@ void _stdFileTest(String testFilePath) {
     final expectedErr = _errMsgs[testFilePath];
     if (expectedErr == null) {
       verifyZeroInteractions(_stderr);
+      expect(updater.numErrors, 0);
     } else {
       final vr = verify(_stderr.writeln(captureAny));
       expect(vr.captured.join(';'), expectedErr);
+      expect(updater.numErrors, 1);
     }
 
     final expectedDoc = new File(_expectedFn2Path(testFilePath)).existsSync()

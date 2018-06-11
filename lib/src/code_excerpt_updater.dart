@@ -56,6 +56,7 @@ class Updater {
   List<String> _lines = [];
 
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
+  int _numWarnings = 0, _numErrors = 0;
 
   /// [err] defaults to [stderr].
   Updater(
@@ -83,8 +84,10 @@ class Updater {
     }
   }
 
+  int get numErrors => _numErrors;
   int get numSrcDirectives => _numSrcDirectives;
   int get numUpdatedFrag => _numUpdatedFrag;
+  int get numWarnings => _numWarnings;
 
   int get lineNum => _origNumLines - _lines.length;
 
@@ -681,9 +684,15 @@ class Updater {
 
   Predicate<String> _not(Predicate<String> p) => (String s) => !p(s);
 
-  void _warn(String msg) => _report('Warning', msg);
+  void _warn(String msg) {
+    _numWarnings++;
+    return _report('Warning', msg);
+  }
 
-  void _reportError(String msg) => _report('Error', msg);
+  void _reportError(String msg) {
+    _numErrors++;
+    return _report('Error', msg);
+  }
 
   void _report(String prefix, String msg) =>
       _stderr.writeln('$prefix: $_filePath:$lineNum $msg');
