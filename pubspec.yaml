@@ -1,5 +1,6 @@
 name: code_excerpt_updater
-version: 0.9.2
+version: 0.10.0
+
 description: Updates code excerpts inside markdown code blocks.
 
 author: Patrice Chalin <pchalin@gmail.com>

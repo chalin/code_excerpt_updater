@@ -15,6 +15,7 @@ pub global activate --source git https://github.com/chalin/code_excerpt_updater.
 ```
 Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
+    --fail-on-refresh                 Report a non-zero exit code if a fragment is refreshed.
 -p, --fragment-dir-path               PATH to directory containing code fragment files
                                       (defaults to "", that is, the current working directory).
 
@@ -36,13 +37,8 @@ Usage: code_excerpt_updater [OPTIONS] file_or_directory...
     --yaml                            Read excerpts from *.excerpt.yaml files.
 ```
 
-For example, you could run the updater over
-[AngularDart](https://github.com/dart-lang/angular) sources as follows:
-
-```shell
-> cd ~/git/angular/angular
-> pub global run code_excerpt_updater --fragment-dir-path ~/git/site-webdev/tmp/_fragments/_api -w lib`
-```
+Returns a non-zero exit code errors occur during file processing, or if fragments were refreshed and 
+`--fail-on-refresh` is requested.
 
 ## 3. `<?code-excerpt?>` syntax
 

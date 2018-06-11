@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0
+
+- Command returns a non-zero exit code if errors occur during file processing,
+  or if fragments were refreshed and `--fail-on-refresh` is requested.
+
 ## 0.9.2
 
 - Cleanup of pubspec package dependencies.
