@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.2
+
+- Cleanup of pubspec package dependencies.
+
 ## 0.9.1
 
 - Support globally set plaster template using command line option `--plaster TEMPLATE`,
