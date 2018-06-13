@@ -160,9 +160,9 @@ class UpdaterCLI {
     try {
       await _updateFile(filePath);
       numFiles++;
-    } catch (e) {
+    } catch (e, _) {
       numErrors++;
-      stderr.writeln('Error processing "$filePath": $e');
+      stderr.writeln('Error processing "$filePath": $e'); // \n$_
       exitCode = 2;
     }
   }

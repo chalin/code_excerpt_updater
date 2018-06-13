@@ -445,7 +445,7 @@ class Updater {
     final ext = '.excerpt.yaml';
     final excerptYamlPath =
         p.join(fragmentDirPath, _pathBase, relativePath + ext);
-    Map<String, String> excerptsYaml;
+    YamlMap excerptsYaml;
     try {
       final contents = new File(excerptYamlPath).readAsStringSync();
       excerptsYaml = loadYaml(contents, sourceUrl: excerptYamlPath);
