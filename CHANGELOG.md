@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.1
+
+- Fix type error.
+
 ## 0.10.0
 
 - Command returns a non-zero exit code if errors occur during file processing,
