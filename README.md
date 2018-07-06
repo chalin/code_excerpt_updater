@@ -1,7 +1,7 @@
 # Markdown code-block updater
 
 This is the repo for a simple _line-based_ updater for markdown code-blocks preceded by XML
-processor instructions of the form `<?code-excerpt ...?>`. Dart (`.dart'), markdown (`.md`), and 
+processor instructions of the form `<?code-excerpt ...?>`. Dart (`.dart`), markdown (`.md`), and 
 Jade (`.jade`) files are processed. For Dart source files, code blocks in API comments are updated.
 
 ## 1. Installation
