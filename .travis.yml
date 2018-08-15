@@ -6,46 +6,23 @@ env:
   global:
     - LIBS="bin lib test"
   matrix:
-
-
-stages: [analyze, dartfmt, test]
+    - TASK="dartanalyzer --fatal-warnings $LIBS analysis_options.yaml"
+    - TASK="pub run test"
+    # dartfmt is included below
 
 matrix:
-  fast_finish: true
-  allow_failures:
-    - dart: dev
-      env: TASK=pub run test
-#  exclude:
-#    - dart: 1.24.3
-#      stage: analyze
-#    - dart: 1.24.3
-#      stage: dartfmt
-
-
-jobs:
+  #  fast_finish: true
+  #  allow_failures:
+  #    - dart: dev
+  #      env: TASK="pub run test"
   include:
-    - stage: analyze
-      env: TASK=dartanalyzer
-      script:
-        - set
-        - pub get
-        - $TASK --fatal-warnings $LIBS analysis_options.yaml
-      # if: env(TRAVIS_DART_VERSION) IN (dev, stable)
+    - dart: stable
+      env: TASK="dartfmt --set-exit-if-changed -n $LIBS"
+  exclude:
+    - dart: 1.24.3
+      env: TASK="dartanalyzer --fatal-warnings $LIBS analysis_options.yaml"
 
-    - stage: dartfmt
-      env: TASK=dartfmt
-      script:
-        - set
-        - pub get
-        - $TASK -n $LIBS
-      # if: env(TRAVIS_DART_VERSION) IN (stable)
-
-    - stage: test
-      env: TASK="pub run test"
-      script:
-        - set
-        - pub get
-        - $TASK
+script: $TASK
 
 cache:
   directories:
