@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.0
+
+- Support `--exclude=<PATH_REGEXP,...>`.
+
 ## 0.10.1
 
 - Fix type error.

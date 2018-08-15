@@ -1,3 +1,16 @@
+import 'package:logging/logging.dart';
+
+bool _loggerInitialized = false;
+
+void initLogger([Level defaultLevel = Level.WARNING]) {
+  if (_loggerInitialized) return;
+  Logger.root.level = defaultLevel;
+  Logger.root.onRecord.listen((LogRecord rec) {
+    print('${rec.level.name}: ${rec.time}: ${rec.message}');
+  });
+  _loggerInitialized = true;
+}
+
 // ignore_for_file: type_annotate_public_apis
 
 /// String to int conversion

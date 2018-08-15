@@ -4,16 +4,21 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:code_excerpt_updater/src/code_excerpt_updater.dart';
 import 'package:args/args.dart';
+import 'package:code_excerpt_updater/src/code_excerpt_updater.dart';
+import 'package:logging/logging.dart';
+
+import 'src/util.dart';
 
 const _commandName = 'code_excerpt_updater';
 final _validExt = new RegExp(r'\.(dart|jade|md)$');
+final _dotPathRe = new RegExp(r'(^|/)\..*($|/)');
 
 /// Processes `.dart` and `.md` files, recursively traverses directories
 /// using [Updater]. See this command's help for CLI argument details.
 class UpdaterCLI {
   static final _escapeNgInterpolationFlagName = 'escape-ng-interpolation';
+  static final _excludeFlagName = 'exclude';
   static final _failOnRefresh = 'fail-on-refresh';
   static final _fragmentDirPathFlagName = 'fragment-dir-path';
   static final _inPlaceFlagName = 'write-in-place';
@@ -26,12 +31,21 @@ class UpdaterCLI {
       '(defaults to "", that is, the current working directory)';
   static final _replaceName = 'replace';
 
+  final Logger _log = new Logger('CEU');
+
   final _parser = new ArgParser()
-    ..addFlag(_failOnRefresh, negatable: false, help: 'Report a non-zero '
-    'exit code if a fragment is refreshed.')
+    ..addMultiOption(_excludeFlagName,
+        help: 'Paths to exclude when processing a directory recursively.\n'
+            'Dot files and directorys are always excluded.',
+        valueHelp: 'PATH_REGEXP,...')
+    ..addFlag(_failOnRefresh,
+        negatable: false,
+        help: 'Report a non-zero '
+            'exit code if a fragment is refreshed.')
     ..addOption(_fragmentDirPathFlagName,
         abbr: 'p',
-        help: 'PATH to directory containing code fragment files\n$_defaultPath.')
+        help:
+            'PATH to directory containing code fragment files\n$_defaultPath.')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show command help.')
     ..addOption(_indentFlagName,
         abbr: 'i',
@@ -51,8 +65,7 @@ class UpdaterCLI {
         help: 'Escape Angular interpolation syntax {{...}} as {!{...}!}.')
     ..addOption(_plasterFlagName,
         help: 'TEMPLATE. Default plaster template to use for all files.\n'
-        'For example, "// Insert your code here"; use "none" to remove plasters.'
-    )
+            'For example, "// Insert your code here"; use "none" to remove plasters.')
     ..addOption(_replaceName,
         help:
             'REPLACE-EXPRESSIONs. Global replace argument. See README for syntax.')
@@ -60,6 +73,8 @@ class UpdaterCLI {
         negatable: false, help: 'Read excerpts from *.excerpt.yaml files.');
 
   bool escapeNgInterpolation;
+  List<String> excludePathRegExpStrings;
+  List<RegExp> excludePathRegExp;
   bool excerptsYaml;
   bool failOnRefresh;
   String fragmentDirPath, plasterTemplate, replaceExpr, srcDirPath;
@@ -74,7 +89,9 @@ class UpdaterCLI {
   int numSrcDirectives = 0;
   int numUpdatedFrag = 0;
 
-  UpdaterCLI();
+  UpdaterCLI() {
+    initLogger();
+  }
 
   void setArgs(List<String> argsAsStrings) {
     ArgResults args;
@@ -103,6 +120,7 @@ class UpdaterCLI {
       _printUsageAndExit(_parser, msg: 'Expecting one or more path arguments');
 
     escapeNgInterpolation = args[_escapeNgInterpolationFlagName];
+    excludePathRegExpStrings = args[_excludeFlagName];
     excerptsYaml = args[_yamlFlagName] ?? false;
     failOnRefresh = args[_failOnRefresh] ?? false;
     fragmentDirPath = args[_fragmentDirPathFlagName] ?? '';
@@ -111,6 +129,8 @@ class UpdaterCLI {
     replaceExpr = args[_replaceName] ?? '';
     srcDirPath = args[_srcDirPathFlagName] ?? '';
 
+    excludePathRegExp = [_dotPathRe]
+      ..addAll(excludePathRegExpStrings.map((p) => new RegExp(p)));
     argsAreValid = true;
   }
 
@@ -139,33 +159,36 @@ class UpdaterCLI {
     }
   }
 
-  final _dotPubPathRe = new RegExp(r'(^|/).pub($|/)');
-
-  /// Process (recursively) the entities in the directory [path], ignoring
+  /// Process (recursively) the entities in the directory [dirPath], ignoring
   /// non-Dart and non-directory entities.
-  Future _processDirectory(String path) async {
-    final dir = new Directory(path);
-    final entityList = dir.list(recursive: true, followLinks: false);
-    await for (FileSystemEntity entity in entityList) {
-      final filePath = entity.path;
-      if (filePath.contains(_dotPubPathRe)) continue;
-      if (!_validExt.hasMatch(filePath)) continue;
-      // Not testing for entity type as it is almost certainly a file. Only warn
-      // about files with invalid extensions when explicitly listed on cmd line.
-      await _processFile(filePath);
+  Future _processDirectory(String dirPath) async {
+    _log.fine('_processDirectory: $dirPath');
+    if (_exclude(dirPath)) return;
+    final dir = new Directory(dirPath);
+    final entityList = dir.list(); // recursive: true, followLinks: false
+    await for (FileSystemEntity fse in entityList) {
+      final path = fse.path;
+      final exclude =
+          _exclude(path) || fse is File && !_validExt.hasMatch(path);
+      _log.finer('>> FileSystemEntity: $path ${exclude ? '- excluded' : ''}');
+      if (exclude) continue;
+      await (fse is Directory ? _processDirectory(path) : _processFile(path));
     }
   }
 
-  Future _processFile(String filePath) async {
+  Future _processFile(String path) async {
     try {
-      await _updateFile(filePath);
+      await _updateFile(path);
       numFiles++;
+      _log.info('_processFile: $path');
     } catch (e, _) {
       numErrors++;
-      stderr.writeln('Error processing "$filePath": $e'); // \n$_
+      stderr.writeln('Error processing "$path": $e'); // \n$_
       exitCode = 2;
     }
   }
+
+  bool _exclude(String path) => excludePathRegExp.any((e) => path.contains(e));
 
   Future _updateFile(String filePath) async {
     final updater = new Updater(

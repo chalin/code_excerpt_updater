@@ -33,6 +33,10 @@ final _errMsgs = {
   'no_change/invalid_code_block.dart':
       'Error: test_data/src/no_change/invalid_code_block.dart:5 '
       'unterminated markdown code block for <?code-excerpt "quote.md"?>',
+  'no_change/invalid_code_excerpt_arg.dart':
+      'Warning: test_data/src/no_change/invalid_code_excerpt_arg.dart:1 '
+      'instruction ignored: unrecognized set instruction argument: '
+      '/// <?code-excerpt foo="abc"?>',
   'no_change/missing_code_block.dart':
       'Error: test_data/src/no_change/missing_code_block.dart:3 '
       'code block should immediately follow <?code-excerpt?> - "quote.md"\n'
@@ -45,8 +49,10 @@ void _stdFileTest(String testFilePath) {
   test(testFileName, () {
     final testFileRelativePath = testFilePath;
     // var originalSrc = getSrc(testFileRelativePath);
+    // print('>> ${_srcFileName2Path(testFileRelativePath)}');
     final updatedDocs =
         updater.generateUpdatedFile(_srcFileName2Path(testFileRelativePath));
+    // print('>> updatedDocs: ${updatedDocs}');
 
     final expectedErr = _errMsgs[testFilePath];
     if (expectedErr == null) {
@@ -55,7 +61,9 @@ void _stdFileTest(String testFilePath) {
     } else {
       final vr = verify(_stderr.writeln(captureAny));
       expect(vr.captured.join(';'), expectedErr);
-      expect(updater.numErrors, 1);
+      final isWarning = expectedErr.startsWith('Warn');
+      expect(updater.numErrors, isWarning ? 0 : 1);
+      expect(updater.numWarnings, isWarning ? 1 : 0);
     }
 
     final expectedDoc = new File(_expectedFn2Path(testFilePath)).existsSync()
@@ -121,6 +129,7 @@ void testsFromDefaultDir() {
       'basic_with_region.dart',
       'frag_not_found.dart',
       'invalid_code_block.dart',
+      'invalid_code_excerpt_arg.dart',
       'missing_code_block.dart',
       'no_comment_prefix.md',
       'no_path.md',
@@ -220,7 +229,6 @@ void testExcerptYaml() {
   });
 
   group('globally change default plaster', () {
-
     setUp(() {
       updater = new Updater(
         p.join(_testDir, 'excerpt_yaml'),

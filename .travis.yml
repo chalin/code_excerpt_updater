@@ -1,26 +1,33 @@
 language: dart
 
-dart: [stable, dev]
+dart: [1.24.3, stable, dev]
 
 env:
   global:
     - LIBS="bin lib test"
+  matrix:
+    - TASK="dartanalyzer --fatal-warnings $LIBS analysis_options.yaml"
+    - TASK="pub run test"
+    # dartfmt is included below
 
-# TODO: find a way to exclude dartfmt for stable. I've tried many variants w/o success.
-#matrix:
-#  fast_finish: true
-#  allow_failures:
-#    - dart_task:
-#      - dartfmt: -n $LIBS
-#  exclude:
-#    - dart: stable
-#      dartfmt: -n $LIBS
+matrix:
+  #  fast_finish: true
+  #  allow_failures:
+  #    - dart: dev
+  #      env: TASK="pub run test"
+  include:
+    - dart: stable
+      env: TASK="dartfmt --set-exit-if-changed -n $LIBS"
+  exclude:
+    - dart: 1.24.3
+      env: TASK="dartanalyzer --fatal-warnings $LIBS analysis_options.yaml"
 
-dart_task:
- - dartanalyzer: --fatal-warnings $LIBS
- # - dartfmt: -n $LIBS
- - test
+script: $TASK
 
 cache:
   directories:
     - $HOME/.pub-cache
+
+# Only run Travis jobs for named branches (to avoid double builds for each PR)
+branches:
+  only: [master, /^\d(\.x|-dev)$/, /travis-build/]
