@@ -163,7 +163,8 @@ class Updater {
     } else if (info.args.keys.length == 1 && info.args.containsKey('title')) {
       // Only asking for a title is ok.
     } else {
-      _log.warning('instruction ignored: ${info.instruction}');
+      _warn('instruction ignored: unrecognized set instruction argument: '
+          '${info.instruction}');
     }
   }
 
@@ -245,8 +246,8 @@ class Updater {
       final _line =
           '$linePrefix$indentation$line'.replaceFirst(new RegExp(r'\s+$'), '');
       return this.escapeNgInterpolation
-          ? _line.replaceAllMapped(
-              new RegExp(r'({){|(})}'), (m) => '${m[1]??m[2]}!${m[1]??m[2]}')
+          ? _line.replaceAllMapped(new RegExp(r'({){|(})}'),
+              (m) => '${m[1] ?? m[2]}!${m[1] ?? m[2]}')
           : _line;
     }).toList();
     if (!_listEq(currentCodeBlock, prefixedCodeExcerpt)) _numUpdatedFrag++;
