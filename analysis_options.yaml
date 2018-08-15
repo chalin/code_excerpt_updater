@@ -1,7 +1,6 @@
 # See the guide here: https://www.dartlang.org/guides/language/analysis-options
 
 analyzer:
-  strong-mode: true
   exclude:
     - test_data/**
 
