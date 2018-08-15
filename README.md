@@ -15,6 +15,9 @@ pub global activate --source git https://github.com/chalin/code_excerpt_updater.
 ```
 Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
+    --exclude=<PATH_REGEXP,...>       Paths to exclude when processing a directory recursively.
+                                      Dot files and directorys are always excluded.
+
     --fail-on-refresh                 Report a non-zero exit code if a fragment is refreshed.
 -p, --fragment-dir-path               PATH to directory containing code fragment files
                                       (defaults to "", that is, the current working directory).

@@ -69,10 +69,7 @@ class Updater {
     this.globalPlasterTemplate,
     Stdout err,
   }) : _stderr = err ?? stderr {
-    Logger.root.level = Level.WARNING;
-    Logger.root.onRecord.listen((LogRecord rec) {
-      print('${rec.level.name}: ${rec.time}: ${rec.message}');
-    });
+    initLogger();
     if (globalReplaceExpr.isNotEmpty) {
       _globalCodeTransformer = replaceCodeTransformer(globalReplaceExpr);
       if (_globalCodeTransformer == null) {

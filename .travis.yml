@@ -1,26 +1,56 @@
 language: dart
 
-dart: [stable, dev]
+dart: [1.24.3, stable, dev]
 
 env:
   global:
     - LIBS="bin lib test"
+  matrix:
 
-# TODO: find a way to exclude dartfmt for stable. I've tried many variants w/o success.
-#matrix:
-#  fast_finish: true
-#  allow_failures:
-#    - dart_task:
-#      - dartfmt: -n $LIBS
+
+stages: [analyze, dartfmt, test]
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - dart: dev
+      env: TASK=pub run test
 #  exclude:
-#    - dart: stable
-#      dartfmt: -n $LIBS
+#    - dart: 1.24.3
+#      stage: analyze
+#    - dart: 1.24.3
+#      stage: dartfmt
 
-dart_task:
- - dartanalyzer: --fatal-warnings $LIBS
- # - dartfmt: -n $LIBS
- - test
+
+jobs:
+  include:
+    - stage: analyze
+      env: TASK=dartanalyzer
+      script:
+        - set
+        - pub get
+        - $TASK --fatal-warnings $LIBS analysis_options.yaml
+      # if: env(TRAVIS_DART_VERSION) IN (dev, stable)
+
+    - stage: dartfmt
+      env: TASK=dartfmt
+      script:
+        - set
+        - pub get
+        - $TASK -n $LIBS
+      # if: env(TRAVIS_DART_VERSION) IN (stable)
+
+    - stage: test
+      env: TASK="pub run test"
+      script:
+        - set
+        - pub get
+        - $TASK
 
 cache:
   directories:
     - $HOME/.pub-cache
+
+# Only run Travis jobs for named branches (to avoid double builds for each PR)
+branches:
+  only: [master, /^\d(\.x|-dev)$/, /travis-build/]
