@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.0
+
+- Support code blocks between `{% foo ... %}` and `{% endfoo %}`.
+  This has been added, in particular to support `diff` tags.
+
 ## 0.11.0
 
 - Support `--exclude=<PATH_REGEXP,...>`.
