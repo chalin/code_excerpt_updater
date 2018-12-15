@@ -127,6 +127,7 @@ void testsFromDefaultDir() {
       'basic_diff.dart',
       'basic_no_region.dart',
       'basic_with_region.dart',
+      'diff.md',
       'frag_not_found.dart',
       'invalid_code_block.dart',
       'invalid_code_excerpt_arg.dart',

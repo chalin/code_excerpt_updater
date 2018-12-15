@@ -31,10 +31,10 @@ CodeTransformer compose(CodeTransformer f, CodeTransformer g) =>
 /// [fragmentDirPath] directory, and diff sources from [srcDirPath].
 class Updater {
   final RegExp codeBlockStartMarker =
-      new RegExp(r'^\s*(///?)?\s*(```|{%-?\s*prettify\s*(\w*)(\s+.*)?-?%})?');
+      new RegExp(r'^\s*(///?)?\s*(```|{%-?\s*\w+\s*(\w*)(\s+.*)?-?%})?');
   final RegExp codeBlockEndMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
   final RegExp codeBlockEndPrettifyMarker =
-      new RegExp(r'^\s*(///?)?\s*({%-?\s*endprettify\s*-?%})?');
+      new RegExp(r'^\s*(///?)?\s*({%-?\s*end\w+\s*-?%})?');
 
   final Logger _log = new Logger('CEU');
   final Stdout _stderr;
