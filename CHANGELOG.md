@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.0
+
+- Remove docregion tags from diff source files before performing the diff (#40).
+
 ## 0.12.0
 
 - Support code blocks between `{% foo ... %}` and `{% endfoo %}`.
