@@ -125,5 +125,6 @@ class Differ {
     return '${match[1]} $relativePath';
   }
 
-  Directory getTmpDir() => _tmpDir ??= Directory.systemTemp; // .createTempSync();
+  Directory getTmpDir() =>
+      _tmpDir ??= Directory.systemTemp; // .createTempSync();
 }
