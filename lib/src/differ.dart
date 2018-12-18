@@ -91,14 +91,15 @@ class Differ {
   ///
   /// Lets [FileSystemException]s through.
   File filteredFile(String filePath) {
-    final file = File(filePath);
+    final file = new File(filePath);
     final src = file.readAsStringSync();
     final endsWithNL = src.endsWith(_eol);
     final lines = src.split(_eol);
     lines.removeWhere((line) => docregionRe.hasMatch(line));
 
     final ext = p.extension(filePath);
-    final tmpFilePath = p.join(getTmpDir().path, 'differ_src_${filePath.hashCode}$ext');
+    final tmpFilePath =
+        p.join(getTmpDir().path, 'differ_src_${filePath.hashCode}$ext');
     final tmpFile = new File(tmpFilePath);
     var content = lines.join(_eol);
     tmpFile.writeAsStringSync(content);
@@ -124,5 +125,5 @@ class Differ {
     return '${match[1]} $relativePath';
   }
 
-  Directory getTmpDir() => _tmpDir ??= Directory.systemTemp.createTempSync();
+  Directory getTmpDir() => _tmpDir ??= Directory.systemTemp; // .createTempSync();
 }
