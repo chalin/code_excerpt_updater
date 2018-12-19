@@ -7,11 +7,13 @@ import 'nullable.dart';
 
 const _eol = '\n';
 typedef ErrorReporter = void Function(String msg);
+typedef ExcerptFetcher = Iterable<String> Function(String path, String region);
 
 class Differ {
-  Differ(this._log, this._reportError);
+  Differ(this._excerptFetcher, this._log, this._reportError);
 
   final docregionRe = new RegExp(r'#(end)?doc(plaster|region)\b');
+  final ExcerptFetcher _excerptFetcher;
   final ErrorReporter _reportError;
   final Logger _log;
 
@@ -19,14 +21,15 @@ class Differ {
   Directory _tmpDir;
 
   @nullable
-  Iterable<String> getDiff(
-      String relativeSrcPath1, Map<String, String> args, String pathPrefix) {
+  Iterable<String> getDiff(String relativeSrcPath1, String region,
+      Map<String, String> args, String pathPrefix) {
     final relativeSrcPath2 = args['diff-with'];
-    final srcPath1 = p.join(pathPrefix, relativeSrcPath1);
-    final srcPath2 = p.join(pathPrefix, relativeSrcPath2);
-
-    final path1 = filteredFile(srcPath1);
-    final path2 = filteredFile(srcPath2);
+    final path1 = region.isEmpty
+        ? filteredFile(p.join(pathPrefix, relativeSrcPath1))
+        : _writeExcerpt(relativeSrcPath1, region);
+    final path2 = region.isEmpty
+        ? filteredFile(p.join(pathPrefix, relativeSrcPath2))
+        : _writeExcerpt(relativeSrcPath2, region);
 
     final r = Process.runSync('diff', ['-u', path1.path, path2.path]);
 
@@ -67,8 +70,10 @@ class Differ {
     // Fix file id lines by removing:
     // - [pathPrefix] from the start of the file paths so that paths are relative
     // - timestamp (because file timestamps are not relevant in the git world)
-    result[0] = _adjustDiffFileIdLine(relativeSrcPath1, result[0]);
-    result[1] = _adjustDiffFileIdLine(relativeSrcPath2, result[1]);
+    result[0] = _adjustDiffFileIdLine(
+        relativeSrcPath1 + (region.isEmpty ? '' : ' ($region)'), result[0]);
+    result[1] = _adjustDiffFileIdLine(
+        relativeSrcPath2 + (region.isEmpty ? '' : ' ($region)'), result[1]);
 
     final from = args['from'], to = args['to'];
     // TODO: trim diff output to contain only lines between those that (first)
@@ -93,17 +98,31 @@ class Differ {
   File filteredFile(String filePath) {
     final file = new File(filePath);
     final src = file.readAsStringSync();
-    final endsWithNL = src.endsWith(_eol);
     final lines = src.split(_eol);
     lines.removeWhere((line) => docregionRe.hasMatch(line));
 
+    return _writeTmp(filePath, lines.join(_eol));
+  }
+
+  /// Write the named region of [filePath] to a temporary file whose filename
+  /// is derived from [filePath]. Returns the [File] instance of the temp file.
+  File _writeExcerpt(String filePath, String region) {
+    var excerpt = _excerptFetcher(filePath, region)?.join(_eol) ?? '';
+    // To avoid "No newline at end of file" messages from the diff tool,
+    // ensure that the excerpt ends with an EOL (since all trailing blank lines
+    // are usually stripped out).
+    if (excerpt.isNotEmpty) excerpt += _eol;
+    return _writeTmp(filePath, excerpt);
+  }
+
+  /// Write [content] to a temporary file whose filename is derived
+  /// from [filePath]. Returns the temporary [File] instance.
+  File _writeTmp(String filePath, String content) {
     final ext = p.extension(filePath);
     final tmpFilePath =
         p.join(getTmpDir().path, 'differ_src_${filePath.hashCode}$ext');
     final tmpFile = new File(tmpFilePath);
-    var content = lines.join(_eol);
     tmpFile.writeAsStringSync(content);
-
     return tmpFile;
   }
 

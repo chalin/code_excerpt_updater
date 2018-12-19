@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.0
+
+- Support diff of code regions.
+
 ## 0.13.0
 
 - Remove docregion tags from diff source files before performing the diff (#40).
