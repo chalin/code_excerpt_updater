@@ -1,4 +1,6 @@
-## Test of Jekyll diff plugin
+## Diff tests of code blocks in Jekyll `diff` tags
+
+## Basic
 
 <?code-excerpt "0-base/basic.dart" diff-with="1-step/basic.dart"?>
 {% diff %}
@@ -39,6 +41,28 @@
 --- 0-base/docregion.dart (main)
 +++ 1-step/docregion.dart (main)
 @@ -1 +1 @@
+-void main() => print('$_greeting $_scope');
++void main() => print('$_greeting $_scope!');
+{% enddiff %}
+
+### Files with docregion tags and diff-u argument
+
+<?code-excerpt "0-base/docregion.dart" diff-with="1-step/docregion.dart" diff-u="4"?>
+{% diff %}
+--- 0-base/docregion.dart
++++ 1-step/docregion.dart
+@@ -1,5 +1,5 @@
+-var _greeting = 'hello';
++var _greeting = 'bonjour';
+ var _scope = 'world';
+
+ /// Some
+ /// doc
+@@ -11,5 +11,5 @@
+ /// get
+ /// two
+ /// diff
+ /// hunks
 -void main() => print('$_greeting $_scope');
 +void main() => print('$_greeting $_scope!');
 {% enddiff %}
