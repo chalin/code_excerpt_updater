@@ -12,6 +12,8 @@
  void main() => print('$_greeting $_scope');
 {% enddiff %}
 
+### Files with docregion tags
+
 <?code-excerpt "0-base/docregion.dart" diff-with="1-step/docregion.dart"?>
 {% diff %}
 --- 0-base/docregion.dart
@@ -26,6 +28,17 @@
  /// two
  /// diff
  /// hunks
+-void main() => print('$_greeting $_scope');
++void main() => print('$_greeting $_scope!');
+{% enddiff %}
+
+### Diff region
+
+<?code-excerpt "0-base/docregion.dart (main)" diff-with="1-step/docregion.dart"?>
+{% diff %}
+--- 0-base/docregion.dart (main)
++++ 1-step/docregion.dart (main)
+@@ -1 +1 @@
 -void main() => print('$_greeting $_scope');
 +void main() => print('$_greeting $_scope!');
 {% enddiff %}

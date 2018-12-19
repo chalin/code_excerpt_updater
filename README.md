@@ -90,14 +90,18 @@ Notes:
 
 The second form of the instruction
 
-    <?code-excerpt "path/file.ext" diff-with="path2/file2.ext2" from="regexp" to="regexp"?>
+    <?code-excerpt "path/file1.ext (optional-region-name)" diff-with="path2/file2.ext2" from="regexp" to="regexp"?>
     ```
       ...
     ```
 
 must also be followed by a code block. When the code_excerpt_updater is run, it will update the content of the code
-block with the output of `diff -u path/file.ext path2/file2.ext2` truncated at the first diff output line that
-matches the `to` regular expression. The `from` attribute is currently ignored. Both `from` and `to` are optional.
+block with the output of `diff -u path/filtered_file1.ext path2/filtered_file2.ext2` truncated at the first diff 
+output line that matches the `to` regular expression, where the `filtered_file*.ext*` represents the corresponding
+file `file*.ext*` but with docregion tags removed. When an optional region name is provided, then the named regions
+(the same in both files) are compared.
+
+The `from` attribute is currently ignored. Both `from` and `to` are optional.
 
 ### c. Set instruction
 

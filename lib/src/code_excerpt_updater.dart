@@ -81,7 +81,8 @@ class Updater {
         throw new Exception(msg);
       }
     }
-    _differ = new Differ(_log, _reportError);
+    _differ = new Differ(
+        (path, region) => _getExcerpt(path, region, null), _log, _reportError);
   }
 
   int get numErrors => _numErrors;
@@ -203,7 +204,8 @@ class Updater {
               fileAndCmdLineCodeTransformer,
             ].fold(null, compose),
           )
-        : _differ.getDiff(infoPath, args, p.join(srcDirPath, _pathBase));
+        : _differ.getDiff(
+            infoPath, info.region, args, p.join(srcDirPath, _pathBase));
     _log.finer('>>> new code block code: $newCodeBlockCode');
     if (newCodeBlockCode == null) {
       // Error has been reported. Return while leaving existing code.
