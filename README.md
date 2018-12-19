@@ -88,20 +88,28 @@ Notes:
 
 ### b. Code diff
 
-The second form of the instruction
+The second form of the instruction must also be followed by a code block:
 
-    <?code-excerpt "path/file1.ext (optional-region-name)" diff-with="path2/file2.ext2" from="regexp" to="regexp"?>
+    <?code-excerpt "path/file1.ext (optional-region-name)" diff-with="path2/file2.ext2" optional-args?>
     ```
       ...
     ```
 
-must also be followed by a code block. When the code_excerpt_updater is run, it will update the content of the code
+These are the optional arguments (usage is explained further below):
+
+- `from="regexp"`
+- `to="regexp"`
+- `diff-u="NUM"`
+
+When the code_excerpt_updater is run, it will update the content of the code
 block with the output of `diff -u path/filtered_file1.ext path2/filtered_file2.ext2` truncated at the first diff 
 output line that matches the `to` regular expression, where the `filtered_file*.ext*` represents the corresponding
 file `file*.ext*` but with docregion tags removed. When an optional region name is provided, then the named regions
 (the same in both files) are compared.
 
-The `from` attribute is currently ignored. Both `from` and `to` are optional.
+The `from` attribute is currently ignored.
+
+If `diff-u="NUM"` is used, then the diff command is called with the `-U NUM` flag instead of `-u`.
 
 ### c. Set instruction
 

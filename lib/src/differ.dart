@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import 'nullable.dart';
+import 'util.dart';
 
 const _eol = '\n';
 typedef ErrorReporter = void Function(String msg);
@@ -31,13 +32,16 @@ class Differ {
         ? filteredFile(p.join(pathPrefix, relativeSrcPath2))
         : _writeExcerpt(relativeSrcPath2, region);
 
-    final r = Process.runSync('diff', ['-u', path1.path, path2.path]);
+    final diffArgs = args['diff-u'] == null ? ['-u'] : ['-U', args['diff-u']];
+    diffArgs.addAll([path1.path, path2.path]);
+    final r = Process.runSync('diff', diffArgs);
 
     try {
       path1.deleteSync();
       path2.deleteSync();
-    } on FileSystemException {
-      // Ignore
+    } on FileSystemException catch (e) {
+      _log.info(
+          'Ignored exception while attempting to delete temporary files: $e');
     }
 
     if (r.exitCode > 1) {

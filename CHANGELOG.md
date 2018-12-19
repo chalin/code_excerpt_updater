@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.0
+
+- Support `diff-u="NUM"` arguments for diff instructions.
+
 ## 0.14.0
 
 - Support diff of code regions.

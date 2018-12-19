@@ -281,7 +281,7 @@ class Updater {
   }
 
   RegExp supportedArgs = new RegExp(
-      r'^(class|diff-with|from|indent-by|path-base|plaster|region|replace|remove|retain|title|to)$');
+      r'^(class|diff-with|diff-u|from|indent-by|path-base|plaster|region|replace|remove|retain|title|to)$');
   RegExp argRegExp = new RegExp(r'^([-\w]+)\s*(=\s*"(.*?)"\s*|\b)\s*');
 
   void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
