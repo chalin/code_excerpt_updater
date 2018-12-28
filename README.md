@@ -107,8 +107,6 @@ output line that matches the `to` regular expression, where the `filtered_file*.
 file `file*.ext*` but with docregion tags removed. When an optional region name is provided, then the named regions
 (the same in both files) are compared.
 
-The `from` attribute is currently ignored.
-
 If `diff-u="NUM"` is used, then the diff command is called with the `-U NUM` flag instead of `-u`.
 
 ### c. Set instruction

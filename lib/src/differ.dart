@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
+import 'diff/diff.dart';
 import 'nullable.dart';
-import 'util.dart';
 
 const _eol = '\n';
 typedef ErrorReporter = void Function(String msg);
@@ -66,10 +66,14 @@ class Differ {
     ...
     */
 
-    List<String> result = r.stdout.split(_eol);
-
-    // Trim trailing blank lines
-    while (result.length > 0 && result.last == '') result.removeLast();
+    String diffText = r.stdout.trim();
+    final from = args['from'] == null ? null : new RegExp(args['from']);
+    final to = args['to'] == null ? null : new RegExp(args['to']);
+    if (from != null || to != null) {
+      final diff = new Diff(diffText);
+      if (diff.dropLines(from: from, to: to)) diffText = diff.toString();
+    }
+    List<String> result = diffText.split(_eol);
 
     // Fix file id lines by removing:
     // - [pathPrefix] from the start of the file paths so that paths are relative
@@ -78,19 +82,6 @@ class Differ {
         relativeSrcPath1 + (region.isEmpty ? '' : ' ($region)'), result[0]);
     result[1] = _adjustDiffFileIdLine(
         relativeSrcPath2 + (region.isEmpty ? '' : ' ($region)'), result[1]);
-
-    final from = args['from'], to = args['to'];
-    // TODO: trim diff output to contain only lines between those that (first)
-    // match `from` and `to`. For now we only trim after `to`.
-    // Only return diff until 'to' pattern, if given
-    final startingIdx =
-        from == null ? 0 : _indexOfFirstMatch(result, 2, new RegExp(from));
-    if (to != null) {
-      final lastIdx = _indexOfFirstMatch(result, startingIdx, new RegExp(to));
-      if (lastIdx < result.length) {
-        result = result.getRange(0, lastIdx + 1).toList();
-      }
-    }
     return result;
   }
 
