@@ -88,7 +88,6 @@ class Hunk {
 
     final rest = _lines.skip(indexOfMatch).toList();
     _lines = rest;
-    final head = _head; // '@@ -5,6 +6,7 @@';
     return true; // new Hunk('$head\n$rest');
   }
 
@@ -127,7 +126,15 @@ class Hunk {
 
   bool isValidFileIndex(int i) => i == 0 || i == 1;
 
-  int _int(String s) => s == null ? null : int.tryParse(s);
+  int _int(String s) {
+    if (s == null) return null;
+    try {
+      // Can't use tryParse() since this code needs to run under 1.x as well.
+      return int.parse(s);
+    } catch (e) {
+      return null;
+    }
+  }
 
   int _indexOfFirstMatch(List a, RegExp re) {
     var i = 0;
