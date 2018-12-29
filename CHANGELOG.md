@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.0
+
+- Fully support the diff `from` argument.
+
 ## 0.15.0
 
 - Support `diff-u="NUM"` arguments for diff instructions.

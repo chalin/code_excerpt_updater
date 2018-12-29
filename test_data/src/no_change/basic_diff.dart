@@ -22,7 +22,7 @@ class D {}
 /// ```diff
 /// --- 0-base/basic.dart
 /// +++ 1-step/basic.dart
-/// @@ -1,4 +1,4 @@
+/// @@ -1 +1 @@
 /// -var _greeting = 'hello';
 /// +var _greeting = 'bonjour';
 /// ```
@@ -32,7 +32,7 @@ class E {}
 /// ```diff
 /// --- 0-base/basic.dart
 /// +++ 1-step/basic.dart
-/// @@ -1,4 +1,4 @@
+/// @@ -1 +1 @@
 /// -var _greeting = 'hello';
 /// ```
 class F {}
