@@ -50,7 +50,7 @@ void main() {
       });
 
       test('dropLines', () {
-        expect(d.dropLines(from: classRE), true);
+        expect(d.keepLines(from: classRE), true);
         expect(d.toString(), diff1TrimmedBefore);
       });
     });
@@ -63,7 +63,7 @@ void main() {
       });
 
       test('dropLines', () {
-        expect(d.dropLines(from: classRE, to: returnRE), true);
+        expect(d.keepLines(from: classRE, to: returnRE), true);
         expect(d.toString(), diff1TrimmedBeforeAndAfter);
       });
     });
@@ -75,7 +75,7 @@ void main() {
       });
 
       test('dropLines', () {
-        expect(d.dropLines(from: wontMatchRE), false);
+        expect(d.keepLines(from: wontMatchRE), false);
         expect(d.toString(), diff1head);
       });
     });
@@ -91,20 +91,20 @@ void main() {
       });
 
       test('dropLines', () {
-        expect(d.dropLines(from: classRE), true);
+        expect(d.keepLines(from: classRE), true);
         expect(d.toString(), '$diff1TrimmedBefore\n$hunk2');
       });
     });
 
     test('Diff2: Skip before "class" until "return"', () {
-      expect(d.dropLines(from: classRE, to: returnRE), true);
+      expect(d.keepLines(from: classRE, to: returnRE), true);
       expect(d.toString(), diff1TrimmedBeforeAndAfter);
     });
   });
 
   test('Diff using to regexp but no from regexp', () {
     var d = new Diff('$diff1head\n$hunk2');
-    expect(d.dropLines(to: new RegExp(r'^\+\s+child:')), true);
+    expect(d.keepLines(to: new RegExp(r'^\+\s+child:')), true);
     expect(d.toString(), '$diff1head\n$hunk2Trimmed');
   });
 }

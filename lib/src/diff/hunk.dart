@@ -1,6 +1,6 @@
 const eol = '\n';
 
-/// A unified diff hunk consisting of a line-range header followed by the
+/// A unified-diff hunk consisting of a line-range header followed by the
 /// unified diff line details. For example:
 ///
 ///     @@ -1,10 +1,12 @@
@@ -22,7 +22,7 @@ class Hunk {
   final headRegExp = new RegExp(r'@@ -(\d+)(,(\d+))? \+(\d+)(,(\d+))? @@(.*)');
 
   String _rawText;
-  bool _wasParsed = false;
+  bool _parsed = false;
 
   String _rawHead = '';
   List<int> _start;
@@ -36,7 +36,7 @@ class Hunk {
   }
 
   void _parse() {
-    if (_wasParsed) return;
+    if (_parsed) return;
 
     final srcLines = _rawText.split(eol);
     _rawText = '';
@@ -49,7 +49,7 @@ class Hunk {
     _start = [_int(m[1]), _int(m[4])];
     _length = [_int(m[3]) ?? 1, _int(m[6]) ?? 1];
     _timeStamp = m[7];
-    _wasParsed = true;
+    _parsed = true;
 
     assert(_rawHead == _head, '_rawHead: $_rawHead\n_head:$_head');
   }
@@ -115,7 +115,7 @@ class Hunk {
   String get _head => '@@ -${_lineLength(0)} +${_lineLength(1)} @@$_timeStamp';
 
   @override
-  String toString() => _wasParsed ? '$_head\n${_lines.join(eol)}' : _rawText;
+  String toString() => _parsed ? '$_head\n${_lines.join(eol)}' : _rawText;
 
   String _lineLength(int i) {
     assert(isValidFileIndex(i));

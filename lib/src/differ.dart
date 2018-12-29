@@ -71,7 +71,7 @@ class Differ {
     final to = args['to'] == null ? null : new RegExp(args['to']);
     if (from != null || to != null) {
       final diff = new Diff(diffText);
-      if (diff.dropLines(from: from, to: to)) diffText = diff.toString();
+      if (diff.keepLines(from: from, to: to)) diffText = diff.toString();
     }
     List<String> result = diffText.split(_eol);
 
