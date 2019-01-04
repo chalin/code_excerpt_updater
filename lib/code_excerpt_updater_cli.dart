@@ -8,7 +8,7 @@ import 'package:args/args.dart';
 import 'package:code_excerpt_updater/src/code_excerpt_updater.dart';
 import 'package:logging/logging.dart';
 
-import 'src/util.dart';
+import 'src/logger.dart';
 
 const _commandName = 'code_excerpt_updater';
 final _validExt = new RegExp(r'\.(dart|jade|md)$');
