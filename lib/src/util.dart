@@ -1,15 +1,7 @@
 import 'package:logging/logging.dart';
 
-bool _loggerInitialized = false;
-
-void initLogger([Level defaultLevel = Level.WARNING]) {
-  if (_loggerInitialized) return;
-  Logger.root.level = defaultLevel;
-  Logger.root.onRecord.listen((LogRecord rec) {
-    print('${rec.level.name}: ${rec.time}: ${rec.message}');
-  });
-  _loggerInitialized = true;
-}
+import 'constants.dart';
+import 'dart:math';
 
 // ignore_for_file: type_annotate_public_apis
 
@@ -23,11 +15,28 @@ int toInt(String s, {int radix = 10, int errorValue}) {
 }
 
 //-----------------------------------------------------------------------------
+
+final _blankLineRegEx = new RegExp(r'^\s*$');
+final _leadingWhitespaceRegEx = new RegExp(r'^[ \t]*');
+
+Iterable<String> trimMinLeadingSpace(List<String> lines) {
+  final nonblankLines = lines.where((s) => !_blankLineRegEx.hasMatch(s));
+  // Length of leading spaces to be trimmed
+  final lengths = nonblankLines.map((s) {
+    final match = _leadingWhitespaceRegEx.firstMatch(s);
+    return match == null ? 0 : match[0].length;
+  });
+  if (lengths.isEmpty) return lines;
+  final len = lengths.reduce(min);
+  return len == 0
+      ? lines
+      : lines.map((line) => line.length < len ? line : line.substring(len));
+}
+
+//-----------------------------------------------------------------------------
 // TODO: consider writing the following conversions as a string transformer.
 
-const backslash = '\\';
 final escapedSlashRE = new RegExp(r'\\/');
-const zeroChar = '\u{0}';
 
 final _slashHexCharRE = new RegExp(r'\\x(..)');
 final _slashLetterRE = new RegExp(r'\\([\\nt])');

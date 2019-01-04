@@ -2,26 +2,22 @@
 // is governed by a MIT-style license that can be found in the LICENSE file.
 
 import 'dart:io';
-import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import 'code_transformer/core.dart';
+import 'code_transformer/plaster.dart';
+import 'code_transformer/replace.dart';
+import 'constants.dart';
 import 'differ.dart';
+import 'issue_reporter.dart';
+import 'logger.dart';
 import 'util.dart';
 import 'nullable.dart';
 
-const defaultPlaster = '···';
-
-const _eol = '\n';
 Function _listEq = const ListEquality().equals;
-typedef String CodeTransformer(String code);
-typedef bool Predicate<T>(T t);
-
-CodeTransformer compose(CodeTransformer f, CodeTransformer g) =>
-    f == null ? g : g == null ? f : (String s) => g(f(s));
 
 /// A simple line-based updater for markdown code-blocks. It processes given
 /// files line-by-line, looking for matches to [procInstrRE] contained within
@@ -37,8 +33,6 @@ class Updater {
   final RegExp codeBlockEndPrettifyMarker =
       new RegExp(r'^\s*(///?)?\s*({%-?\s*end\w+\s*-?%})?');
 
-  final Logger _log = new Logger('CEU');
-  final Stdout _stderr;
   final String fragmentDirPath;
   final String srcDirPath;
   final int defaultIndentation;
@@ -50,15 +44,18 @@ class Updater {
   Differ _differ;
 
   String _pathBase = ''; // init from <?code-excerpt path-base="..."?>
-  CodeTransformer _globalCodeTransformer;
+  CodeTransformer _appGlobalCodeTransformer;
   CodeTransformer _fileGlobalCodeTransformer;
+  PlasterCodeTransformer _plaster;
+  ReplaceCodeTransformer _replace;
 
   String _filePath = '';
   int _origNumLines = 0;
   List<String> _lines = [];
 
   int _numSrcDirectives = 0, _numUpdatedFrag = 0;
-  int _numWarnings = 0, _numErrors = 0;
+
+  IssueReporter _reporter;
 
   /// [err] defaults to [stderr].
   Updater(
@@ -70,30 +67,35 @@ class Updater {
     this.globalReplaceExpr = '',
     this.globalPlasterTemplate,
     Stdout err,
-  }) : _stderr = err ?? stderr {
+  }) {
     initLogger();
+    _reporter = new IssueReporter(
+        new IssueContext(() => _filePath, () => lineNum), err);
+    _replace = new ReplaceCodeTransformer(_reporter);
+    _plaster = new PlasterCodeTransformer(excerptsYaml, _replace);
+
     if (globalReplaceExpr.isNotEmpty) {
-      _globalCodeTransformer = replaceCodeTransformer(globalReplaceExpr);
-      if (_globalCodeTransformer == null) {
+      _appGlobalCodeTransformer = _replace.codeTransformer(globalReplaceExpr);
+      if (_appGlobalCodeTransformer == null) {
         // Error details have already been reported, now throw.
         final msg =
             'Command line replace expression is invalid: $globalReplaceExpr';
         throw new Exception(msg);
       }
     }
-    _differ = new Differ(
-        (path, region) => _getExcerpt(path, region, null), _log, _reportError);
+    _differ = new Differ((path, region) => _getExcerpt(path, region, null), log,
+        _reporter.error);
   }
 
-  int get numErrors => _numErrors;
+  int get numErrors => _reporter.numErrors;
   int get numSrcDirectives => _numSrcDirectives;
   int get numUpdatedFrag => _numUpdatedFrag;
-  int get numWarnings => _numWarnings;
+  int get numWarnings => _reporter.numWarnings;
 
   int get lineNum => _origNumLines - _lines.length;
 
   CodeTransformer get fileAndCmdLineCodeTransformer =>
-      compose(_fileGlobalCodeTransformer, _globalCodeTransformer);
+      compose(_fileGlobalCodeTransformer, _appGlobalCodeTransformer);
 
   /// Returns the content of the file at [path] with code blocks updated.
   /// Missing fragment files are reported via `err`.
@@ -105,7 +107,7 @@ class Updater {
 
   String _updateSrc(String dartSource) {
     _pathBase = '';
-    _lines = dartSource.split(_eol);
+    _lines = dartSource.split(eol);
     _origNumLines = _lines.length;
     return _processLines();
   }
@@ -122,11 +124,12 @@ class Updater {
       if (!line.contains('<?code-excerpt')) continue;
       final match = procInstrRE.firstMatch(line);
       if (match == null) {
-        _reportError('invalid processing instruction: $line');
+        _reporter.error('invalid processing instruction: $line');
         continue;
       }
       if (!match[0].endsWith('?>')) {
-        _warn('processing instruction must be closed using "?>" syntax');
+        _reporter
+            .warn('processing instruction must be closed using "?>" syntax');
       }
       final info = _extractAndNormalizeArgs(match);
 
@@ -136,13 +139,13 @@ class Updater {
         output.addAll(_getUpdatedCodeBlock(info));
       }
     }
-    return output.join(_eol);
+    return output.join(eol);
   }
 
   void _processSetInstruction(InstrInfo info) {
     void _checkForMoreThan1ArgErr() {
       if (info.args.keys.length > 1) {
-        _reportError(
+        _reporter.error(
             'set instruction should have at most one argument: ${info.instruction}');
       }
     }
@@ -152,7 +155,7 @@ class Updater {
       _checkForMoreThan1ArgErr();
     } else if (info.args.containsKey('replace')) {
       _fileGlobalCodeTransformer = info.args['replace']?.isNotEmpty ?? false
-          ? replaceCodeTransformer(info.args['replace'])
+          ? _replace.codeTransformer(info.args['replace'])
           : null;
       _checkForMoreThan1ArgErr();
     } else if (info.args.containsKey('plaster')) {
@@ -164,8 +167,9 @@ class Updater {
     } else if (info.args.keys.length == 1 && info.args.containsKey('title')) {
       // Only asking for a title is ok.
     } else {
-      _warn('instruction ignored: unrecognized set instruction argument: '
-          '${info.instruction}');
+      _reporter
+          .warn('instruction ignored: unrecognized set instruction argument: '
+              '${info.instruction}');
     }
   }
 
@@ -176,14 +180,14 @@ class Updater {
     final infoPath = info.path;
     final currentCodeBlock = <String>[];
     if (_lines.isEmpty) {
-      _reportError('reached end of input, expect code block - "$infoPath"');
+      _reporter.error('reached end of input, expect code block - "$infoPath"');
       return currentCodeBlock;
     }
     var line = _lines.removeAt(0);
     final openingCodeBlockLine = line;
     final firstLineMatch = codeBlockStartMarker.firstMatch(line);
     if (firstLineMatch == null || firstLineMatch[2] == null) {
-      _reportError('code block should immediately follow <?code-excerpt?> - '
+      _reporter.error('code block should immediately follow <?code-excerpt?> - '
           '"$infoPath"\n  not: $line');
       return <String>[openingCodeBlockLine];
     }
@@ -193,20 +197,20 @@ class Updater {
             infoPath,
             info.region,
             [
-              plasterCodeTransformer(
+              _plaster.codeTransformer(
                   args.containsKey('plaster')
                       ? args['plaster']
                       : filePlasterTemplate ?? globalPlasterTemplate,
                   _determineCodeLang(openingCodeBlockLine, info.path)),
               removeCodeTransformer(args['remove']),
               retainCodeTransformer(args['retain']),
-              replaceCodeTransformer(args['replace']),
+              _replace.codeTransformer(args['replace']),
               fileAndCmdLineCodeTransformer,
             ].fold(null, compose),
           )
         : _differ.getDiff(
             infoPath, info.region, args, p.join(srcDirPath, _pathBase));
-    _log.finer('>>> new code block code: $newCodeBlockCode');
+    log.finer('>>> new code block code: $newCodeBlockCode');
     if (newCodeBlockCode == null) {
       // Error has been reported. Return while leaving existing code.
       // We could skip ahead to the end of the code block but that
@@ -222,7 +226,7 @@ class Updater {
       line = _lines[0];
       final match = _codeBlockEndMarker.firstMatch(line);
       if (match == null) {
-        _reportError('unterminated markdown code block '
+        _reporter.error('unterminated markdown code block '
             'for <?code-excerpt "$infoPath"?>');
         return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
       } else if (match[2] != null) {
@@ -235,7 +239,7 @@ class Updater {
       _lines.removeAt(0);
     }
     if (closingCodeBlockLine == null) {
-      _reportError('unterminated markdown code block '
+      _reporter.error('unterminated markdown code block '
           'for <?code-excerpt "$infoPath"?>');
       return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
     }
@@ -256,13 +260,13 @@ class Updater {
     final result = <String>[openingCodeBlockLine]
       ..addAll(prefixedCodeExcerpt)
       ..add(closingCodeBlockLine);
-    _log.finer('>>> result: $result');
+    log.finer('>>> result: $result');
     return result;
   }
 
   InstrInfo _extractAndNormalizeArgs(Match procInstrMatch) {
     final info = new InstrInfo(procInstrMatch[0]);
-    _log.finer(
+    log.finer(
         '>>> pIMatch: ${procInstrMatch.groupCount} - [${info.instruction}]');
     var i = 1;
     info.linePrefix = procInstrMatch[i++] ?? '';
@@ -287,18 +291,18 @@ class Updater {
   void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
     String restOfArgs = argsAsString.trim();
-    _log.fine('>> __extractAndNormalizeNamedArgs: [$restOfArgs]');
+    log.fine('>> __extractAndNormalizeNamedArgs: [$restOfArgs]');
     while (restOfArgs.isNotEmpty) {
       final match = argRegExp.firstMatch(restOfArgs);
       if (match == null) {
-        _reportError(
+        _reporter.error(
             'instruction argument parsing failure at/around: $restOfArgs');
         break;
       }
       final argName = match[1];
       final argValue = match[3];
       info.args[argName] = argValue;
-      _log.finer(
+      log.finer(
           '  >> arg: $argName = ${argValue == null ? argValue : '"$argValue"'}');
       restOfArgs = restOfArgs.substring(match[0].length);
     }
@@ -319,7 +323,7 @@ class Updater {
       info.path = path.substring(0, match.start);
       info.region = match[1]?.replaceAll(nonWordChars, '-');
     }
-    _log.finer('>>> path="${info.path}", region="${info.region}"');
+    log.finer('>>> path="${info.path}", region="${info.region}"');
   }
 
   int getIndentBy(String indentByAsString) {
@@ -336,7 +340,7 @@ class Updater {
       result = 0;
     }
     if (errorMsg.isNotEmpty) {
-      _reportError('<?code-excerpt?> indent-by: $errorMsg');
+      _reporter.error('<?code-excerpt?> indent-by: $errorMsg');
     }
     return result;
   }
@@ -346,12 +350,12 @@ class Updater {
       String relativePath, String region, CodeTransformer t) {
     String excerpt = _getExcerptAsString(relativePath, region);
     if (excerpt == null) return null; // Errors have been reported
-    _log.fine('>> excerpt before xform: "$excerpt"');
+    log.fine('>> excerpt before xform: "$excerpt"');
     if (t != null) excerpt = t(excerpt);
-    final result = excerpt.split(_eol);
+    final result = excerpt.split(eol);
     // All excerpts are [_eol] terminated, so drop trailing blank lines
     while (result.length > 0 && result.last == '') result.removeLast();
-    return _trimMinLeadingSpace(result);
+    return trimMinLeadingSpace(result);
   }
 
   /// Look for a fragment file under [fragmentDirPath], failing that look for a
@@ -377,10 +381,10 @@ class Updater {
     if (region.isEmpty && excerptsYaml == null) {
       // Continue: search for source file.
     } else if (excerptsYaml == null) {
-      _reportError('cannot read file "$excerptYamlPath"');
+      _reporter.error('cannot read file "$excerptYamlPath"');
       return null;
     } else if (excerptsYaml[region] == null) {
-      _reportError('cannot read file "$excerptYamlPath"');
+      _reporter.error('cannot read file "$excerptYamlPath"');
       return null;
     } else {
       return excerptsYaml[region].trimRight();
@@ -391,7 +395,7 @@ class Updater {
     try {
       return new File(filePath).readAsStringSync();
     } on FileSystemException {
-      _reportError('excerpt not found for "$relativePath"');
+      _reporter.error('excerpt not found for "$relativePath"');
       return null;
     }
   }
@@ -413,7 +417,7 @@ class Updater {
       return new File(fragPath).readAsStringSync();
     } on FileSystemException {
       if (region != '') {
-        _reportError('cannot read fragment file "$fragPath"');
+        _reporter.error('cannot read fragment file "$fragPath"');
         return null;
       }
       // Fall through
@@ -424,200 +428,11 @@ class Updater {
     try {
       return new File(srcFilePath).readAsStringSync();
     } on FileSystemException {
-      _reportError('cannot find a source file "$srcFilePath", '
+      _reporter.error('cannot find a source file "$srcFilePath", '
           'nor fragment file "$fragPath"');
       return null;
     }
   }
-
-  final _blankLineRegEx = new RegExp(r'^\s*$');
-  final _leadingWhitespaceRegEx = new RegExp(r'^[ \t]*');
-
-  Iterable<String> _trimMinLeadingSpace(List<String> lines) {
-    final nonblankLines = lines.where((s) => !_blankLineRegEx.hasMatch(s));
-    // Length of leading spaces to be trimmed
-    final lengths = nonblankLines.map((s) {
-      final match = _leadingWhitespaceRegEx.firstMatch(s);
-      return match == null ? 0 : match[0].length;
-    });
-    if (lengths.isEmpty) return lines;
-    final len = lengths.reduce(min);
-    return len == 0
-        ? lines
-        : lines.map((line) => line.length < len ? line : line.substring(len));
-  }
-
-  final _matchDollarNumRE = new RegExp(r'(\$+)(&|\d*)');
-  final _endRE = new RegExp(r'^g;?\s*$');
-
-  /// Replace raw plaster markers in excerpt with [plasterTemplate].
-  /// Note that plaster line indentation is not affected.
-  ///
-  /// If [plasterTemplate] is 'none' then plasters are removed.
-  /// If [plasterTemplate] is null then a default [lang] specific plaster
-  /// template is used.
-  @nullable
-  CodeTransformer plasterCodeTransformer(String plasterTemplate, String lang) {
-    if (plasterTemplate == 'none') return removeCodeTransformer(defaultPlaster);
-    if (!excerptsYaml) return null;
-
-    final template =
-        plasterTemplate?.replaceAll(r'$defaultPlaster', defaultPlaster) ??
-            _plasterTemplateFor(lang);
-    return template == null
-        ? null
-        : _replaceCodeTransformer(defaultPlaster, template);
-  }
-
-  @nullable
-  String _plasterTemplateFor(String lang) {
-    if (lang == null) return null;
-
-    switch (lang) {
-      case 'css':
-        return '/* $defaultPlaster */';
-
-      case 'html':
-        return '<!-- $defaultPlaster -->';
-
-      case 'dart':
-      case 'js':
-      case 'scss':
-      case 'ts':
-        return '// $defaultPlaster';
-
-      case 'yaml':
-        return '# $defaultPlaster';
-
-      case 'diff':
-      default:
-        return null;
-    }
-  }
-
-  @nullable
-  CodeTransformer replaceCodeTransformer(String replaceExp) {
-    dynamic _reportErr([String extraInfo = '']) =>
-        _reportError('invalid replace attribute ("$replaceExp"); ' +
-            (extraInfo.isEmpty ? '' : '$extraInfo; ') +
-            'supported syntax is 1 or more semi-colon-separated: /regexp/replacement/g');
-
-    if (replaceExp == null) return null;
-    final replaceExpParts = replaceExp
-        .replaceAll(escapedSlashRE, zeroChar)
-        .split('/')
-        .map((s) => s.replaceAll(zeroChar, '/'))
-        .toList();
-
-    // replaceExpParts = [''] + n x [re, replacement, end] where n >= 1 and
-    // end matches _endRE.
-
-    final start = replaceExpParts[0];
-    final len = replaceExpParts.length;
-    if (len < 4 || len % 3 != 1)
-      return _reportErr('argument has missing parts ($len)');
-
-    if (start != '')
-      return _reportErr('argument should start with "/", not  "$start"');
-
-    final transformers = <CodeTransformer>[];
-    for (int i = 1; i < replaceExpParts.length; i += 3) {
-      final re = replaceExpParts[i];
-      final replacement = replaceExpParts[i + 1];
-      final end = replaceExpParts[i + 2];
-      if (!_endRE.hasMatch(end)) {
-        _reportErr(
-            'expected argument end syntax of "g" or "g;" but found "$end"');
-        return null;
-      }
-      final transformer = _replaceCodeTransformer(re, replacement);
-      if (transformer != null) transformers.add(transformer);
-    }
-
-    return transformers.fold(null, compose);
-  }
-
-  @nullable
-  CodeTransformer _replaceCodeTransformer(String re, String _replacement) {
-    final replacement = encodeSlashChar(_replacement);
-    _log.finest(' >> replacement expr: $replacement');
-
-    if (!_matchDollarNumRE.hasMatch(replacement))
-      return (String code) => code.replaceAll(new RegExp(re), replacement);
-
-    return (String code) => code.replaceAllMapped(
-        new RegExp(re),
-        (Match m) => replacement.replaceAllMapped(_matchDollarNumRE, (_m) {
-              // In JS, $$ becomes $ in a replacement string.
-              final numDollarChar = _m[1].length;
-              // Escaped dollar characters, if any:
-              final dollars = r'$' * (numDollarChar ~/ 2);
-
-              // Even number of $'s, e.g. $$1?
-              if (numDollarChar.isEven || _m[2].isEmpty)
-                return '$dollars${_m[2]}';
-
-              if (_m[2] == '&') return '$dollars${m[0]}';
-
-              final argNum = toInt(_m[2], errorValue: m.groupCount + 1);
-              // No corresponding group? Return the arg, like in JavaScript.
-              if (argNum > m.groupCount) return '$dollars\$${_m[2]}';
-
-              return '$dollars${m[argNum]}';
-            }));
-  }
-
-  @nullable
-  CodeTransformer removeCodeTransformer(String arg) {
-    final Predicate<String> matcher = _retainArgToMatcher('remove', arg);
-    return matcher == null
-        ? null
-        : _lineMatcherToCodeTransformer(_not(matcher));
-  }
-
-  @nullable
-  CodeTransformer retainCodeTransformer(String arg) {
-    final Predicate<String> matcher = _retainArgToMatcher('retain', arg);
-    return matcher == null ? null : _lineMatcherToCodeTransformer(matcher);
-  }
-
-  CodeTransformer _lineMatcherToCodeTransformer(Predicate<String> p) =>
-      (String code) {
-        final lines = code.split(_eol)..retainWhere(p);
-        return lines.join(_eol);
-      };
-
-  Predicate<String> _retainArgToMatcher(String cmd, String arg) {
-    if (arg == null) return null;
-    Predicate<String> matcher;
-    if (arg.startsWith('/') && arg.endsWith('/')) {
-      final re = new RegExp(arg.substring(1, arg.length - 1));
-      _log.finest(' >> $cmd arg: "$arg" used as regexp $re');
-      matcher = (s) => re.hasMatch(s);
-    } else {
-      final stringToMatch = arg.startsWith(r'\/')
-          ? arg.substring(1) // TODO: process other escaped characters
-          : arg;
-      _log.finest(' >> $cmd arg: "$stringToMatch" is used as a string matcher');
-      matcher = (s) => s.contains(stringToMatch);
-    }
-    return matcher;
-  }
-
-  Predicate<String> _not(Predicate<String> p) => (String s) => !p(s);
-
-  void _warn(String msg) {
-    _numWarnings++;
-    return _report('Warning', msg);
-  }
-
-  void _reportError(String msg) {
-    _numErrors++;
-    return _report('Error', msg);
-  }
-
-  void _report(String prefix, String msg) =>
-      _stderr.writeln('$prefix: $_filePath:$lineNum $msg');
 
   final RegExp _codeBlockLangSpec = new RegExp(r'(?:```|prettify\s+)(\w+)');
 

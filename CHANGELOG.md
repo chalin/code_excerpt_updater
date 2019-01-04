@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.1
+
+- Code refactorings.
+
 ## 0.16.0
 
 - Fully support the diff `from` argument.

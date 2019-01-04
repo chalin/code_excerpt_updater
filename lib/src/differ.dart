@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
+import 'constants.dart';
 import 'diff/diff.dart';
 import 'nullable.dart';
 
-const _eol = '\n';
 typedef ErrorReporter = void Function(String msg);
 typedef ExcerptFetcher = Iterable<String> Function(String path, String region);
 
@@ -73,7 +73,7 @@ class Differ {
       final diff = new Diff(diffText);
       if (diff.keepLines(from: from, to: to)) diffText = diff.toString();
     }
-    List<String> result = diffText.split(_eol);
+    List<String> result = diffText.split(eol);
 
     // Fix file id lines by removing:
     // - [pathPrefix] from the start of the file paths so that paths are relative
@@ -93,20 +93,20 @@ class Differ {
   File filteredFile(String filePath) {
     final file = new File(filePath);
     final src = file.readAsStringSync();
-    final lines = src.split(_eol);
+    final lines = src.split(eol);
     lines.removeWhere((line) => docregionRe.hasMatch(line));
 
-    return _writeTmp(filePath, lines.join(_eol));
+    return _writeTmp(filePath, lines.join(eol));
   }
 
   /// Write the named region of [filePath] to a temporary file whose filename
   /// is derived from [filePath]. Returns the [File] instance of the temp file.
   File _writeExcerpt(String filePath, String region) {
-    var excerpt = _excerptFetcher(filePath, region)?.join(_eol) ?? '';
+    var excerpt = _excerptFetcher(filePath, region)?.join(eol) ?? '';
     // To avoid "No newline at end of file" messages from the diff tool,
     // ensure that the excerpt ends with an EOL (since all trailing blank lines
     // are usually stripped out).
-    if (excerpt.isNotEmpty) excerpt += _eol;
+    if (excerpt.isNotEmpty) excerpt += eol;
     return _writeTmp(filePath, excerpt);
   }
 
