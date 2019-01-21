@@ -315,6 +315,11 @@ class Updater {
   void _expandDiffPathBraces(InstrInfo info) {
     final match = pathBraces.firstMatch(info.path);
     if (match == null) return;
+    if (info.args['diff-with'] != null) {
+      final msg = "You can't use both the brace syntax and the diff-with "
+          "argument; choose one or the other.";
+      _reporter.error(msg);
+    }
     info.path = match[1] + match[2] + match[4];
     info.args['diff-with'] = match[1] + match[3] + match[4];
   }
