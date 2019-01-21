@@ -1,4 +1,4 @@
-import '../nullable.dart';
+import '../matcher.dart';
 import 'hunk.dart';
 
 /// Representation of a unified diff
@@ -16,7 +16,7 @@ class Diff {
   /// lines. Omit [from], to keep lines as of the first line of the first hunk.
   /// Omit [to] to keep all lines after [from]. Returns true iff [from] or [to]
   /// matched.
-  bool keepLines({RegExp from, RegExp to}) {
+  bool keepLines({Matcher from, Matcher to}) {
     if (!_parsed) _parse();
     var matchFound = false;
     if (from != null) {
@@ -41,20 +41,20 @@ class Diff {
     return false;
   }
 
-  bool dropLinesUntil(RegExp regExp) {
+  bool dropLinesUntil(Matcher matcher) {
     if (!_parsed) _parse();
     while (hunks.isNotEmpty) {
       final hunk = hunks.first;
-      if (hunk.dropLinesUntil(regExp)) return true;
+      if (hunk.dropLinesUntil(matcher)) return true;
       hunks.removeAt(0);
     }
     return false;
   }
 
-  bool dropLinesAfter(RegExp regExp) {
+  bool dropLinesAfter(Matcher matcher) {
     if (!_parsed) _parse();
     for (final hunk in hunks) {
-      if (hunk.dropLinesAfter(regExp)) return true;
+      if (hunk.dropLinesAfter(matcher)) return true;
     }
     return false;
   }

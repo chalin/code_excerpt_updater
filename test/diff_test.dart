@@ -1,4 +1,5 @@
 import 'package:code_excerpt_updater/src/diff/diff.dart';
+import 'package:code_excerpt_updater/src/matcher.dart';
 import 'package:test/test.dart';
 
 import 'hunk_test.dart';
@@ -18,9 +19,9 @@ final diff1TrimmedBeforeAndAfter = '$diff1head\n$hunk1TrimmedBeforeAndAfter';
 final diff2 = '$diff1\n$hunk2';
 
 void main() {
-  final classRE = new RegExp('^ class');
-  final returnRE = new RegExp(r'^\s+return');
-  final wontMatchRE = new RegExp('will not match');
+  final matchClass = patternArgToMatcher('/^ class/');
+  final matchReturn = patternArgToMatcher(r'/^\s+return/');
+  final wontMatch = patternArgToMatcher('will not match');
 
   group('Idempotence on src', () {
     test('Empty diff', () {
@@ -45,37 +46,37 @@ void main() {
 
     group('Skip before "class":', () {
       test('dropLinesUntil', () {
-        expect(d.dropLinesUntil(classRE), true);
+        expect(d.dropLinesUntil(matchClass), true);
         expect(d.toString(), diff1TrimmedBefore);
       });
 
       test('dropLines', () {
-        expect(d.keepLines(from: classRE), true);
+        expect(d.keepLines(from: matchClass), true);
         expect(d.toString(), diff1TrimmedBefore);
       });
     });
 
     group('Skip before "class" until "return":', () {
       test('dropLinesUntil/dropLinesAfter', () {
-        expect(d.dropLinesUntil(classRE), true);
-        expect(d.dropLinesAfter(returnRE), true);
+        expect(d.dropLinesUntil(matchClass), true);
+        expect(d.dropLinesAfter(matchReturn), true);
         expect(d.toString(), diff1TrimmedBeforeAndAfter);
       });
 
       test('dropLines', () {
-        expect(d.keepLines(from: classRE, to: returnRE), true);
+        expect(d.keepLines(from: matchClass, to: matchReturn), true);
         expect(d.toString(), diff1TrimmedBeforeAndAfter);
       });
     });
 
     group('Skip all:', () {
       test('dropLinesUntil', () {
-        expect(d.dropLinesUntil(wontMatchRE), false);
+        expect(d.dropLinesUntil(wontMatch), false);
         expect(d.toString(), diff1head);
       });
 
       test('dropLines', () {
-        expect(d.keepLines(from: wontMatchRE), false);
+        expect(d.keepLines(from: wontMatch), false);
         expect(d.toString(), diff1head);
       });
     });
@@ -86,25 +87,25 @@ void main() {
 
     group('Skip before "class":', () {
       test('dropLinesUntil', () {
-        expect(d.dropLinesUntil(classRE), true);
+        expect(d.dropLinesUntil(matchClass), true);
         expect(d.toString(), '$diff1TrimmedBefore\n$hunk2');
       });
 
       test('dropLines', () {
-        expect(d.keepLines(from: classRE), true);
+        expect(d.keepLines(from: matchClass), true);
         expect(d.toString(), '$diff1TrimmedBefore\n$hunk2');
       });
     });
 
     test('Diff2: Skip before "class" until "return"', () {
-      expect(d.keepLines(from: classRE, to: returnRE), true);
+      expect(d.keepLines(from: matchClass, to: matchReturn), true);
       expect(d.toString(), diff1TrimmedBeforeAndAfter);
     });
   });
 
   test('Diff using to regexp but no from regexp', () {
     var d = new Diff('$diff1head\n$hunk2');
-    expect(d.keepLines(to: new RegExp(r'^\+\s+child:')), true);
+    expect(d.keepLines(to: patternArgToMatcher(r'/^\+\s+child:/')), true);
     expect(d.toString(), '$diff1head\n$hunk2Trimmed');
   });
 }

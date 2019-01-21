@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17.1
+
+- Internal refactoring (use `Matcher` rather than `RegExp` as diff argument types).
+
 ## 0.17.0
 
 - As an alternative to the `diff-with` argument, add support for the Bash path

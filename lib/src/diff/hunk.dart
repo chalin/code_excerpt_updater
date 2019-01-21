@@ -1,3 +1,5 @@
+import '../matcher.dart';
+
 const eol = '\n';
 
 /// A unified-diff hunk consisting of a line-range header followed by the
@@ -67,8 +69,8 @@ class Hunk {
   /// Drop lines (excluding the header), until a line if found
   /// that matches [p]. The matching line is not dropped.
   /// @returns true iff a matching line was found.
-  bool dropLinesUntil(RegExp p) {
-    final indexOfMatch = _indexOfFirstMatch(_lines, p);
+  bool dropLinesUntil(Matcher m) {
+    final indexOfMatch = _indexOfFirstMatch(_lines, m);
     if (indexOfMatch >= _lines.length) return false;
 
     for (var i = 0; i < indexOfMatch; i++) {
@@ -94,8 +96,8 @@ class Hunk {
   /// Look for a line (excluding the header), that matches [p].
   /// All lines after the match are dropped.
   /// @returns true iff a matching line was found.
-  bool dropLinesAfter(RegExp p) {
-    final indexOfMatch = _indexOfFirstMatch(_lines, p);
+  bool dropLinesAfter(Matcher m) {
+    final indexOfMatch = _indexOfFirstMatch(_lines, m);
     if (indexOfMatch >= _lines.length) return false;
 
     for (var i = indexOfMatch + 1; i < _lines.length; i++) {
@@ -136,9 +138,9 @@ class Hunk {
     }
   }
 
-  int _indexOfFirstMatch(List a, RegExp re) {
+  int _indexOfFirstMatch(List a, Matcher m) {
     var i = 0;
-    while (i < a.length && !re.hasMatch(a[i])) i++;
+    while (i < a.length && !m(a[i])) i++;
     return i;
   }
 }

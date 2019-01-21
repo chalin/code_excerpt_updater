@@ -1,4 +1,5 @@
 import 'package:code_excerpt_updater/src/diff/hunk.dart';
+import 'package:code_excerpt_updater/src/matcher.dart';
 import 'package:test/test.dart';
 
 final hunk0 = '''
@@ -68,14 +69,13 @@ void main() {
     });
 
     test('Skip before "class"', () {
-      final skipped = h.dropLinesUntil(new RegExp('^ class'));
-      expect(skipped, true);
+      expect(h.dropLinesUntil(patternArgToMatcher('/^ class/')), true);
       expect(h.toString(), hunk1TrimmedBefore);
     });
 
     test('Skip before "class" until "return"', () {
-      expect(h.dropLinesUntil(new RegExp('^ class')), true);
-      expect(h.dropLinesAfter(new RegExp(r'^\s+return')), true);
+      expect(h.dropLinesUntil(patternArgToMatcher('/^ class/')), true);
+      expect(h.dropLinesAfter(patternArgToMatcher(r'/^\s+return/')), true);
       expect(h.toString(), hunk1TrimmedBeforeAndAfter);
     });
   });
@@ -99,7 +99,7 @@ void main() {
     });
 
     test('Skip before w/o match', () {
-      final skipped = h.dropLinesUntil(new RegExp('xx'));
+      final skipped = h.dropLinesUntil(patternArgToMatcher('xx'));
       expect(skipped, false);
       expect(h.toString(), hunk2);
     });
