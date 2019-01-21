@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.17.0
+
+- As an alternative to the `diff-with` argument, add support for the Bash path
+  brace syntax.
+
 ## 0.16.1
 
 - Code refactorings.

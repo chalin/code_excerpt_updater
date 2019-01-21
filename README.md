@@ -95,6 +95,14 @@ The second form of the instruction must also be followed by a code block:
       ...
     ```
 
+If you diff files whose paths share a prefix and/or suffix, then you can drop the
+`diff-with` argument and use the Bash path-brace syntax instead. For example:
+
+    <?code-excerpt "path/{subpath1,subpath2}/file.ext (optional-region-name)" optional-args?>
+    ```
+      ...
+    ```
+
 These are the optional arguments (usage is explained further below):
 
 - `from="regexp"`
