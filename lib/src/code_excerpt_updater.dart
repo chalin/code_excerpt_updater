@@ -280,7 +280,7 @@ class Updater {
     i++; // optional path+region
     final pathAndOptRegion = procInstrMatch[i++];
     info.unnamedArg = pathAndOptRegion;
-    __extractAndNormalizeNamedArgs(info, procInstrMatch[i]);
+    _extractAndNormalizeNamedArgs(info, procInstrMatch[i]);
     return info;
   }
 
@@ -288,7 +288,7 @@ class Updater {
       r'^(class|diff-with|diff-u|from|indent-by|path-base|plaster|region|replace|remove|retain|title|to)$');
   RegExp argRegExp = new RegExp(r'^([-\w]+)\s*(=\s*"(.*?)"\s*|\b)\s*');
 
-  void __extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
+  void _extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
     String restOfArgs = argsAsString.trim();
     log.fine('>> __extractAndNormalizeNamedArgs: [$restOfArgs]');
@@ -307,6 +307,21 @@ class Updater {
       restOfArgs = restOfArgs.substring(match[0].length);
     }
     _processPathAndRegionArgs(info);
+    _expandDiffPathBraces(info);
+  }
+
+  final RegExp pathBraces = new RegExp(r'^(.*?)\{(.*?),(.*?)\}(.*?)$');
+
+  void _expandDiffPathBraces(InstrInfo info) {
+    final match = pathBraces.firstMatch(info.path);
+    if (match == null) return;
+    if (info.args['diff-with'] != null) {
+      final msg = "You can't use both the brace syntax and the diff-with "
+          "argument; choose one or the other.";
+      _reporter.error(msg);
+    }
+    info.path = match[1] + match[2] + match[4];
+    info.args['diff-with'] = match[1] + match[3] + match[4];
   }
 
   final RegExp regionInPath = new RegExp(r'\s*\((.+)\)\s*$');
@@ -353,7 +368,7 @@ class Updater {
     log.fine('>> excerpt before xform: "$excerpt"');
     if (t != null) excerpt = t(excerpt);
     final result = excerpt.split(eol);
-    // All excerpts are [_eol] terminated, so drop trailing blank lines
+    // All excerpts are [eol] terminated, so drop trailing blank lines
     while (result.length > 0 && result.last == '') result.removeLast();
     return trimMinLeadingSpace(result);
   }

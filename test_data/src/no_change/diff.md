@@ -66,3 +66,31 @@
 -void main() => print('$_greeting $_scope');
 +void main() => print('$_greeting $_scope!');
 {% enddiff %}
+
+## Bash path brace syntax for diffs
+
+<?code-excerpt "{0-base,1-step}/basic.dart"?>
+```diff
+--- 0-base/basic.dart
++++ 1-step/basic.dart
+@@ -1,4 +1,4 @@
+-var _greeting = 'hello';
++var _greeting = 'bonjour';
+ var _scope = 'world';
+
+ void main() => print('$_greeting $_scope');
+```
+
+## Bash path brace syntax with diff-with error
+
+<?code-excerpt "{0-base,1-step}/basic.dart" diff-with="abc"?>
+```diff
+--- 0-base/basic.dart
++++ 1-step/basic.dart
+@@ -1,4 +1,4 @@
+-var _greeting = 'hello';
++var _greeting = 'bonjour';
+ var _scope = 'world';
+
+ void main() => print('$_greeting $_scope');
+```

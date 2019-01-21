@@ -41,6 +41,9 @@ final _errMsgs = {
       'Error: test_data/src/no_change/missing_code_block.dart:3 '
       'code block should immediately follow <?code-excerpt?> - "quote.md"\n'
       '  not: int x = 0;',
+  'no_change/diff.md': 'Error: test_data/src/no_change/diff.md:86 '
+      'You can\'t use both the brace syntax and the diff-with argument; '
+      'choose one or the other.',
 };
 
 void _stdFileTest(String testFilePath) {
