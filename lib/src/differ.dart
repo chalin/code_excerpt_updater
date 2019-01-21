@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 
 import 'constants.dart';
 import 'diff/diff.dart';
+import 'matcher.dart';
 import 'nullable.dart';
 
 typedef ErrorReporter = void Function(String msg);
@@ -67,13 +68,13 @@ class Differ {
     */
 
     String diffText = r.stdout.trim();
-    final from = args['from'] == null ? null : new RegExp(args['from']);
-    final to = args['to'] == null ? null : new RegExp(args['to']);
+    final from = patternArgToMatcher(args['from']);
+    final to = patternArgToMatcher(args['to']);
     if (from != null || to != null) {
       final diff = new Diff(diffText);
       if (diff.keepLines(from: from, to: to)) diffText = diff.toString();
     }
-    List<String> result = diffText.split(eol);
+    final result = diffText.split(eol);
 
     // Fix file id lines by removing:
     // - [pathPrefix] from the start of the file paths so that paths are relative

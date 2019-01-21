@@ -20,12 +20,12 @@ CodeTransformer lineMatcherToCodeTransformer(Matcher p) => (String code) {
 
 @nullable
 CodeTransformer removeCodeTransformer(String arg) {
-  final matcher = patternArgToMatcher('remove', arg);
+  final matcher = patternArgToMatcher(arg, 'remove');
   return matcher == null ? null : lineMatcherToCodeTransformer(not(matcher));
 }
 
 @nullable
 CodeTransformer retainCodeTransformer(String arg) {
-  final matcher = patternArgToMatcher('retain', arg);
+  final matcher = patternArgToMatcher(arg, 'retain');
   return matcher == null ? null : lineMatcherToCodeTransformer(matcher);
 }

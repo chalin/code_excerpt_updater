@@ -18,7 +18,7 @@ class C {}
 /// ```
 class D {}
 
-/// <?code-excerpt "0-base/basic.dart" diff-with="1-step/basic.dart" to="\+var"?>
+/// <?code-excerpt "0-base/basic.dart" diff-with="1-step/basic.dart" to="+var"?>
 /// ```diff
 /// --- 0-base/basic.dart
 /// +++ 1-step/basic.dart
