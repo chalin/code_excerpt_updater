@@ -1,5 +1,5 @@
 name: code_excerpt_updater
-version: 0.18.1
+version: 0.19.0
 
 description: Updates code excerpts inside markdown code blocks.
 

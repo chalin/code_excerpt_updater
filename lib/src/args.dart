@@ -1,3 +1,4 @@
+import 'constants.dart';
 import 'instr_info.dart';
 import 'issue_reporter.dart';
 import 'logger.dart';
@@ -28,7 +29,7 @@ class ArgProcessor {
   }
 
   RegExp supportedArgs = new RegExp(
-      r'^(class|diff-with|diff-u|from|indent-by|path-base|plaster|region|replace|remove|retain|title|to)$');
+      r'^(class|diff-with|diff-u|from|indent-by|path-base|plaster|region|replace|remove|retain|skip|take|title|to)$');
   RegExp argRegExp = new RegExp(r'^([-\w]+)\s*(=\s*"(.*?)"\s*|\b)\s*');
 
   void _extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
@@ -51,6 +52,7 @@ class ArgProcessor {
     }
     _processPathAndRegionArgs(info);
     _expandDiffPathBraces(info);
+    _validateArgs(info.args);
   }
 
   final RegExp pathBraces = new RegExp(r'^(.*?)\{(.*?),(.*?)\}(.*?)$');
@@ -83,4 +85,14 @@ class ArgProcessor {
     }
     log.finer('>>> path="${info.path}", region="${info.region}"');
   }
+
+  void _validateArgs(Map<String, String> args) {
+    _isNullOr(args['skip'], _isInt);
+    _isNullOr(args['take'], _isInt);
+  }
+
+  final isNumericRegExp = new RegExp(r'^[-+]?\d+$');
+  bool _isInt(String value) => isNumericRegExp.hasMatch(value);
+  bool _isNullOr(String value, Predicate<String> test) =>
+      value == null || test(value);
 }

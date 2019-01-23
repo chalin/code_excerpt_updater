@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.0
+
+- Support `skip="+/-n"` and `take="+/-n"` arguments.
+
 ## 0.18.1
 
 - Support `from` and `to` for non-diff code-excerpt instructions.

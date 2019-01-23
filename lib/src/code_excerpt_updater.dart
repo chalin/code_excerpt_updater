@@ -285,6 +285,10 @@ class Updater {
         return _replace.codeTransformer(value);
       case 'retain':
         return retainCodeTransformer(value);
+      case 'skip':
+        return skipCodeTransformer(value);
+      case 'take':
+        return takeCodeTransformer(value);
       case 'to':
         return toCodeTransformer(value);
       default:
