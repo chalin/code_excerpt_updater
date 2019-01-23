@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.17.1
+## 0.17.1, 0.17.2
 
-- Internal refactoring (use `Matcher` rather than `RegExp` as diff argument types).
+- Internal refactoring: e.g., use `Matcher` rather than `RegExp` as diff argument types.
 
 ## 0.17.0
 
