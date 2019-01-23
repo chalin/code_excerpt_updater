@@ -60,6 +60,7 @@ The first (unnamed) argument defines a path to a fragment file. The argument can
 
 Recognized arguments are:
 
+- `from="string|/regex/"`: skips the initial lines until one is found matching the given pattern.
 - `region`, a code fragment region name.
 - `replace="/regexp/replacement/g;..."` defines one or more semi-colon separated [regular expression][]/replacement
   expression pairs for use in a global search-and-replace applied to the code excerpt.
@@ -77,6 +78,11 @@ Recognized arguments are:
   When using legacy excerpts, the only supported value of this attribute is "none".
   The default plaster is `···`, contained in a language-specific comment that is determined from the excerpt directive.
   The language is the code-block language, if specified, otherwise it is taken to be the excerpt path extension.
+- `skip="n"`: skips the first _n_ lines of the excerpt when _n_ is non-negative; drops (skips) the last
+  _n_ lines otherwise.
+- `take="n"`: takes the first _n_ lines of the excerpt when _n_ is non-negative; takes the last
+  _n_ lines otherwise.
+- `to="string|/regex/"`: skips the lines after the first line found matching the given pattern.
 
 Notes:
 - Arguments are processed in the order they appear. This is significant for arguments like

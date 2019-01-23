@@ -29,7 +29,7 @@ class ArgProcessor {
   }
 
   RegExp supportedArgs = new RegExp(
-      r'^(class|diff-with|diff-u|from|indent-by|path-base|plaster|region|replace|remove|retain|skip|title|to)$');
+      r'^(class|diff-with|diff-u|from|indent-by|path-base|plaster|region|replace|remove|retain|skip|take|title|to)$');
   RegExp argRegExp = new RegExp(r'^([-\w]+)\s*(=\s*"(.*?)"\s*|\b)\s*');
 
   void _extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
@@ -87,11 +87,12 @@ class ArgProcessor {
   }
 
   void _validateArgs(Map<String, String> args) {
-    _isNullOr(args['skip'], _ensureIsNumeric);
+    _isNullOr(args['skip'], _isInt);
+    _isNullOr(args['take'], _isInt);
   }
 
-  final isNumericRegExp = new RegExp(r'^-?\d+$');
-  bool _ensureIsNumeric(String value) => isNumericRegExp.hasMatch(value);
+  final isNumericRegExp = new RegExp(r'^[-+]?\d+$');
+  bool _isInt(String value) => isNumericRegExp.hasMatch(value);
   bool _isNullOr(String value, Predicate<String> test) =>
       value == null || test(value);
 }

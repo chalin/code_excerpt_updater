@@ -2,7 +2,7 @@
 
 ## 0.19.0
 
-- Support `skip` and `take` arguments.
+- Support `skip="+/-n"` and `take="+/-n"` arguments.
 
 ## 0.18.1
 
