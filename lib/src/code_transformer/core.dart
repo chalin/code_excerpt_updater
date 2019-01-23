@@ -45,7 +45,12 @@ CodeTransformer retainCodeTransformer(String arg) {
 CodeTransformer skipCodeTransformer(String arg) {
   final n = toInt(arg);
   if (n == null) return null;
-  return (String code) => code.split(eol).skip(n).join(eol);
+  return n >= 0
+      ? (String code) => code.split(eol).skip(n).join(eol)
+      : (String code) {
+          final lines = code.split(eol);
+          return lines.take(lines.length + n).join(eol);
+        };
 }
 
 @nullable
