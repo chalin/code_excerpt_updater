@@ -129,6 +129,7 @@ void testsFromDefaultDir() {
     final _testFileNames = [
       'basic_diff.dart',
       'basic_no_region.dart',
+      'basic_with_args.md',
       'basic_with_region.dart',
       'diff.md',
       'frag_not_found.dart',
