@@ -200,17 +200,8 @@ class Updater {
         ? _getter.getExcerpt(
             infoPath,
             info.region,
-            [
-              _plaster.codeTransformer(
-                  args.containsKey('plaster')
-                      ? args['plaster']
-                      : filePlasterTemplate ?? globalPlasterTemplate,
-                  _determineCodeLang(openingCodeBlockLine, info.path)),
-              removeCodeTransformer(args['remove']),
-              retainCodeTransformer(args['retain']),
-              _replace.codeTransformer(args['replace']),
-              fileAndCmdLineCodeTransformer,
-            ].fold(null, compose),
+            _excerptCodeTransformer(
+                args, _codeLang(openingCodeBlockLine, info.path)),
           )
         : _differ.getDiff(infoPath, info.region, args,
             p.join(_getter.srcDirPath, _getter.pathBase));
@@ -268,6 +259,35 @@ class Updater {
     return result;
   }
 
+  CodeTransformer _excerptCodeTransformer(
+      Map<String, String> args, String lang) {
+    final transformers = [
+      _plaster.codeTransformer(
+          args.containsKey('plaster')
+              ? args['plaster']
+              : filePlasterTemplate ?? globalPlasterTemplate,
+          lang),
+    ];
+
+    args.forEach((arg, val) => transformers.add(_argToTransformer(arg, val)));
+
+    transformers.add(fileAndCmdLineCodeTransformer);
+    return transformers.fold(null, compose);
+  }
+
+  CodeTransformer _argToTransformer(String arg, String value) {
+    switch (arg) {
+      case 'remove':
+        return removeCodeTransformer(value);
+      case 'replace':
+        return _replace.codeTransformer(value);
+      case 'retain':
+        return retainCodeTransformer(value);
+      default:
+        return null;
+    }
+  }
+
   int _getIndentBy(String indentByAsString) {
     if (indentByAsString == null) return defaultIndentation;
     String errorMsg = '';
@@ -289,7 +309,7 @@ class Updater {
 
   final RegExp _codeBlockLangSpec = new RegExp(r'(?:```|prettify\s+)(\w+)');
 
-  String _determineCodeLang(String openingCodeBlockLine, String path) {
+  String _codeLang(String openingCodeBlockLine, String path) {
     final match = _codeBlockLangSpec.firstMatch(openingCodeBlockLine);
     if (match != null) return match[1];
 
