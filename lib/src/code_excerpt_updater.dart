@@ -277,12 +277,16 @@ class Updater {
 
   CodeTransformer _argToTransformer(String arg, String value) {
     switch (arg) {
+      case 'from':
+        return fromCodeTransformer(value);
       case 'remove':
         return removeCodeTransformer(value);
       case 'replace':
         return _replace.codeTransformer(value);
       case 'retain':
         return retainCodeTransformer(value);
+      case 'to':
+        return toCodeTransformer(value);
       default:
         return null;
     }

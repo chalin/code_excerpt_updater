@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.1
+
+- Support `from` and `to` for non-diff code-excerpt instructions.
+
 ## 0.18.0
 
 - BREAKING CHANGE: Respect code-excerpt instruction argument order. 
