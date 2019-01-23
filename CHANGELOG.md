@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.0
+
+- BREAKING CHANGE: Respect code-excerpt instruction argument order. 
+
 ## 0.17.1, 0.17.2
 
 - Internal refactoring: e.g., use `Matcher` rather than `RegExp` as diff argument types.

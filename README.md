@@ -79,6 +79,8 @@ Recognized arguments are:
   The language is the code-block language, if specified, otherwise it is taken to be the excerpt path extension.
 
 Notes:
+- Arguments are processed in the order they appear. This is significant for arguments like
+  `replace`, `remove`, etc.
 - The `<?code-excerpt?>` instruction can optionally be preceded by an single-line comment
   token. Namely either `//` or `///`.
 - Path, and arguments if given, must be enclosed in double quotes.
