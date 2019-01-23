@@ -140,6 +140,7 @@ void testsFromDefaultDir() {
       'no_path.md',
       'no_src.dart',
       'prettify.md',
+      'skip-and-take.md',
     ].map((fn) => p.join('no_change', fn));
 
     _testFileNames.forEach(_stdFileTest);

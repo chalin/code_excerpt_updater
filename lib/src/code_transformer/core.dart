@@ -3,6 +3,7 @@
 import '../constants.dart';
 import '../nullable.dart';
 import '../matcher.dart';
+import '../util.dart';
 
 typedef CodeTransformer = String Function(String code);
 
@@ -38,6 +39,13 @@ CodeTransformer removeCodeTransformer(String arg) {
 CodeTransformer retainCodeTransformer(String arg) {
   final matcher = patternArgToMatcher(arg, 'retain');
   return matcher == null ? null : _retain(matcher);
+}
+
+@nullable
+CodeTransformer skipCodeTransformer(String arg) {
+  final n = toInt(arg);
+  if (n == null) return null;
+  return (String code) => code.split(eol).skip(n).join(eol);
 }
 
 @nullable
