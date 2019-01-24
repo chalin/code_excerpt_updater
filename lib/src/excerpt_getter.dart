@@ -63,7 +63,7 @@ class ExcerptGetter {
       _reporter.error('cannot read file "$excerptYamlPath"');
       return null;
     } else if (excerptsYaml[region] == null) {
-      _reporter.error('cannot read file "$excerptYamlPath"');
+      _reporter.error('there is no "$region" region in "$excerptYamlPath"');
       return null;
     } else {
       return excerptsYaml[region].trimRight();

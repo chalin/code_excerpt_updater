@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.1
+
+- Support `remove` argument for diff instructions.
+
 ## 0.19.0
 
 - Support `skip="+/-n"` and `take="+/-n"` arguments.
