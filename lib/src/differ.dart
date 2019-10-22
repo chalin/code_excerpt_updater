@@ -85,6 +85,7 @@ class Differ {
         relativeSrcPath1 + (region.isEmpty ? '' : ' ($region)'), result[0]);
     result[1] = _adjustDiffFileIdLine(
         relativeSrcPath2 + (region.isEmpty ? '' : ' ($region)'), result[1]);
+    _log.fine('>> diff result:\n${result.join("\n")}');
     return result;
   }
 

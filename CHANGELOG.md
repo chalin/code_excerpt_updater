@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.2
+
+- Add `--log-fine` option.
+
 ## 0.19.1
 
 - Support `remove` argument for diff instructions.
@@ -14,7 +18,7 @@
 
 ## 0.18.0
 
-- BREAKING CHANGE: Respect code-excerpt instruction argument order. 
+- BREAKING CHANGE: Respect code-excerpt instruction argument order.
 
 ## 0.17.1, 0.17.2
 
@@ -94,7 +98,7 @@
 ## 0.7.1
 
 - Strictly match code block marker start/end kinds.
-  E.g., now only `{% endprettify %}` is accepted as 
+  E.g., now only `{% endprettify %}` is accepted as
   the end of a prettify code block (not a triple backtick).
   In this way prettify blocks can contain triple backtick markers.
 
@@ -140,7 +144,7 @@
 
 ## 0.3.1
 
-- Support escaped backslash characters (`\/`) in the replace expression of 
+- Support escaped backslash characters (`\/`) in the replace expression of
   replace attributes; e.g., `replace="/(foo)/$&\/bar/g"` will replace
   `foo` by `foo/bar`.
 
@@ -166,4 +170,4 @@
 
 - First public version, based on
   [github.com/chalin/api_doc_updater](https://github.com/chalin/api_doc_updater).
-  
+
