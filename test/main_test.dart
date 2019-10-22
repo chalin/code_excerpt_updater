@@ -28,19 +28,19 @@ String getExpected(String relPath) => _readFile(_expectedFn2Path(relPath));
 final _errMsgs = {
   'no_change/frag_not_found.dart':
       'Error: test_data/src/no_change/frag_not_found.dart:2 '
-      'cannot find a source file "test_data/diff_src/dne.xzy", '
-      'nor fragment file "test_data/frag/dne.xzy.txt"',
+          'cannot find a source file "test_data/diff_src/dne.xzy", '
+          'nor fragment file "test_data/frag/dne.xzy.txt"',
   'no_change/invalid_code_block.dart':
       'Error: test_data/src/no_change/invalid_code_block.dart:5 '
-      'unterminated markdown code block for <?code-excerpt "quote.md"?>',
+          'unterminated markdown code block for <?code-excerpt "quote.md"?>',
   'no_change/invalid_code_excerpt_arg.dart':
       'Warning: test_data/src/no_change/invalid_code_excerpt_arg.dart:1 '
-      'instruction ignored: unrecognized set instruction argument: '
-      '/// <?code-excerpt foo="abc"?>',
+          'instruction ignored: unrecognized set instruction argument: '
+          '/// <?code-excerpt foo="abc"?>',
   'no_change/missing_code_block.dart':
       'Error: test_data/src/no_change/missing_code_block.dart:3 '
-      'code block should immediately follow <?code-excerpt?> - "quote.md"\n'
-      '  not: int x = 0;',
+          'code block should immediately follow <?code-excerpt?> - "quote.md"\n'
+          '  not: int x = 0;',
   'no_change/diff.md': 'Error: test_data/src/no_change/diff.md:86 '
       'You can\'t use both the brace syntax and the diff-with argument; '
       'choose one or the other.',

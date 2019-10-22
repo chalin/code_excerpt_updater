@@ -4,9 +4,9 @@ final Logger log = new Logger('CEU');
 
 bool _loggerInitialized = false;
 
-void initLogger([Level defaultLevel = Level.WARNING]) {
+void initLogger([Level logLevel]) {
   if (_loggerInitialized) return;
-  Logger.root.level = defaultLevel;
+  Logger.root.level = logLevel ?? Level.WARNING;
   Logger.root.onRecord.listen((LogRecord rec) {
     print('${rec.level.name}: ${rec.time}: ${rec.message}');
   });

@@ -17,6 +17,7 @@ final _dotPathRe = new RegExp(r'(^|/)\..*($|/)');
 /// Processes `.dart` and `.md` files, recursively traverses directories
 /// using [Updater]. See this command's help for CLI argument details.
 class UpdaterCLI {
+  static final _logFineFlagName = 'log-fine';
   static final _escapeNgInterpolationFlagName = 'escape-ng-interpolation';
   static final _excludeFlagName = 'exclude';
   static final _failOnRefresh = 'fail-on-refresh';
@@ -31,9 +32,8 @@ class UpdaterCLI {
       '(defaults to "", that is, the current working directory)';
   static final _replaceName = 'replace';
 
-  final Logger _log = new Logger('CEU');
-
   final _parser = new ArgParser()
+    ..addFlag(_logFineFlagName)
     ..addMultiOption(_excludeFlagName,
         help: 'Paths to exclude when processing a directory recursively.\n'
             'Dot files and directorys are always excluded.',
@@ -81,6 +81,7 @@ class UpdaterCLI {
   bool inPlaceFlag;
   int indentation;
   List<String> pathsToFileOrDir = [];
+  Level logLevel;
 
   bool argsAreValid = false;
 
@@ -88,10 +89,6 @@ class UpdaterCLI {
   int numFiles = 0;
   int numSrcDirectives = 0;
   int numUpdatedFrag = 0;
-
-  UpdaterCLI() {
-    initLogger();
-  }
 
   void setArgs(List<String> argsAsStrings) {
     ArgResults args;
@@ -115,6 +112,8 @@ class UpdaterCLI {
       }
     }
     indentation = i;
+
+    if (args[_logFineFlagName]) logLevel = Level.FINE;
 
     if (pathsToFileOrDir.length < 1)
       _printUsageAndExit(_parser, msg: 'Expecting one or more path arguments');
@@ -162,7 +161,7 @@ class UpdaterCLI {
   /// Process (recursively) the entities in the directory [dirPath], ignoring
   /// non-Dart and non-directory entities.
   Future _processDirectory(String dirPath) async {
-    _log.fine('_processDirectory: $dirPath');
+    log.fine('_processDirectory: $dirPath');
     if (_exclude(dirPath)) return;
     final dir = new Directory(dirPath);
     final entityList = dir.list(); // recursive: true, followLinks: false
@@ -170,7 +169,7 @@ class UpdaterCLI {
       final path = fse.path;
       final exclude =
           _exclude(path) || fse is File && !_validExt.hasMatch(path);
-      _log.finer('>> FileSystemEntity: $path ${exclude ? '- excluded' : ''}');
+      log.finer('>> FileSystemEntity: $path ${exclude ? '- excluded' : ''}');
       if (exclude) continue;
       await (fse is Directory ? _processDirectory(path) : _processFile(path));
     }
@@ -180,7 +179,7 @@ class UpdaterCLI {
     try {
       await _updateFile(path);
       numFiles++;
-      _log.info('_processFile: $path');
+      log.info('_processFile: $path');
     } catch (e, _) {
       numErrors++;
       stderr.writeln('Error processing "$path": $e'); // \n$_
@@ -199,6 +198,7 @@ class UpdaterCLI {
       globalPlasterTemplate: plasterTemplate,
       globalReplaceExpr: replaceExpr,
       excerptsYaml: excerptsYaml,
+      logLevel: logLevel,
     );
     final result = updater.generateUpdatedFile(filePath);
 

@@ -4,6 +4,7 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import 'args.dart';
@@ -66,8 +67,9 @@ class Updater {
     this.globalReplaceExpr = '',
     this.globalPlasterTemplate,
     Stdout err,
+    Level logLevel,
   }) {
-    initLogger();
+    initLogger(logLevel);
     _reporter = new IssueReporter(
         new IssueContext(() => _filePath, () => lineNum), err);
     _replace = new ReplaceCodeTransformer(_reporter);
