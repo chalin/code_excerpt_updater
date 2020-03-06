@@ -25,16 +25,16 @@ void main() {
 
   group('Idempotence on src', () {
     test('Empty diff', () {
-      expect(new Diff('').toString(), '');
+      expect(Diff('').toString(), '');
     });
 
     test('Diff with one hunk', () {
-      final d = new Diff(diff1);
+      final d = Diff(diff1);
       expect(d.toString(), diff1);
     });
 
     test('Diff with more than one hunk', () {
-      final d = new Diff(diff2);
+      final d = Diff(diff2);
       expect(d.toString(), diff2);
     });
   });
@@ -42,7 +42,7 @@ void main() {
   group('Diff with one hunk:', () {
     Diff d;
 
-    setUp(() => d = new Diff(diff1));
+    setUp(() => d = Diff(diff1));
 
     group('Skip before "class":', () {
       test('dropLinesUntil', () {
@@ -83,7 +83,7 @@ void main() {
   });
 
   group('Diff with 2 hunks:', () {
-    final d = new Diff(diff2);
+    final d = Diff(diff2);
 
     group('Skip before "class":', () {
       test('dropLinesUntil', () {
@@ -104,7 +104,7 @@ void main() {
   });
 
   test('Diff using to regexp but no from regexp', () {
-    var d = new Diff('$diff1head\n$hunk2');
+    var d = Diff('$diff1head\n$hunk2');
     expect(d.keepLines(to: patternArgToMatcher(r'/^\+\s+child:/')), true);
     expect(d.toString(), '$diff1head\n$hunk2Trimmed');
   });

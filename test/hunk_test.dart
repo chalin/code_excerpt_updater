@@ -51,7 +51,7 @@ void main() {
     Hunk h;
 
     setUp(() {
-      h = new Hunk(hunk1);
+      h = Hunk(hunk1);
     });
 
     test('Idempotence on src', () {
@@ -64,8 +64,8 @@ void main() {
       expect(h.length(0), 10);
       expect(h.length(1), 12);
 
-      expect(() => h.start(2), throws);
-      expect(() => h.length(2), throws);
+      expect(() => h.start(2), throwsA(isA<AssertionError>()));
+      expect(() => h.length(2), throwsA(isA<AssertionError>()));
     });
 
     test('Skip before "class"', () {
@@ -84,7 +84,7 @@ void main() {
     Hunk h;
 
     setUp(() {
-      h = new Hunk(hunk2);
+      h = Hunk(hunk2);
     });
 
     test('Idempotence on src', () {

@@ -11,8 +11,8 @@ import 'package:logging/logging.dart';
 import 'src/logger.dart';
 
 const _commandName = 'code_excerpt_updater';
-final _validExt = new RegExp(r'\.(dart|jade|md)$');
-final _dotPathRe = new RegExp(r'(^|/)\..*($|/)');
+final _validExt = RegExp(r'\.(dart|jade|md)$');
+final _dotPathRe = RegExp(r'(^|/)\..*($|/)');
 
 /// Processes `.dart` and `.md` files, recursively traverses directories
 /// using [Updater]. See this command's help for CLI argument details.
@@ -32,7 +32,7 @@ class UpdaterCLI {
       '(defaults to "", that is, the current working directory)';
   static final _replaceName = 'replace';
 
-  final _parser = new ArgParser()
+  final _parser = ArgParser()
     ..addFlag(_logFineFlagName)
     ..addMultiOption(_excludeFlagName,
         help: 'Paths to exclude when processing a directory recursively.\n'
@@ -92,6 +92,10 @@ class UpdaterCLI {
 
   void setArgs(List<String> argsAsStrings) {
     ArgResults args;
+
+    final flag = (String name) => (args[name] ?? false) as bool;
+    final str = (String name) => (args[name] ?? '') as String;
+
     try {
       args = _parser.parse(argsAsStrings);
     } on FormatException catch (e) {
@@ -100,12 +104,12 @@ class UpdaterCLI {
     }
     pathsToFileOrDir = args.rest;
 
-    if (args['help']) _printHelpAndExit(_parser);
+    if (flag('help')) _printHelpAndExit(_parser);
 
-    int i = 0;
+    var i = 0;
     if (args[_indentFlagName] != null) {
       try {
-        i = int.parse(args[_indentFlagName]);
+        i = int.parse(str(_indentFlagName));
       } on FormatException {
         _printUsageAndExit(_parser,
             msg: '$_indentFlagName: invalid value  "${args[_indentFlagName]}"');
@@ -113,47 +117,50 @@ class UpdaterCLI {
     }
     indentation = i;
 
-    if (args[_logFineFlagName]) logLevel = Level.FINE;
+    if (flag(_logFineFlagName)) logLevel = Level.FINE;
 
-    if (pathsToFileOrDir.length < 1)
+    if (pathsToFileOrDir.isEmpty) {
       _printUsageAndExit(_parser, msg: 'Expecting one or more path arguments');
+    }
+    escapeNgInterpolation = flag(_escapeNgInterpolationFlagName);
+    excludePathRegExpStrings = args[_excludeFlagName] as List<String>;
+    excerptsYaml = flag(_yamlFlagName);
+    failOnRefresh = flag(_failOnRefresh);
+    fragmentDirPath = str(_fragmentDirPathFlagName);
+    inPlaceFlag = flag(_inPlaceFlagName);
+    plasterTemplate = str(_plasterFlagName);
+    replaceExpr = str(_replaceName);
+    srcDirPath = str(_srcDirPathFlagName);
 
-    escapeNgInterpolation = args[_escapeNgInterpolationFlagName];
-    excludePathRegExpStrings = args[_excludeFlagName];
-    excerptsYaml = args[_yamlFlagName] ?? false;
-    failOnRefresh = args[_failOnRefresh] ?? false;
-    fragmentDirPath = args[_fragmentDirPathFlagName] ?? '';
-    inPlaceFlag = args[_inPlaceFlagName];
-    plasterTemplate = args[_plasterFlagName];
-    replaceExpr = args[_replaceName] ?? '';
-    srcDirPath = args[_srcDirPathFlagName] ?? '';
-
-    excludePathRegExp = [_dotPathRe]
-      ..addAll(excludePathRegExpStrings.map((p) => new RegExp(p)));
+    excludePathRegExp = [
+      _dotPathRe,
+      ...excludePathRegExpStrings.map((p) => RegExp(p))
+    ];
     argsAreValid = true;
   }
 
   /// Process files/directories given as CLI arguments.
   Future<Null> processArgs() async {
-    if (!argsAreValid)
-      throw new Exception('Cannot proceed without valid arguments');
-
+    if (!argsAreValid) {
+      throw Exception('Cannot proceed without valid arguments');
+    }
     for (final entityPath in pathsToFileOrDir) {
       await _processEntity(entityPath, warnAboutNonDartFile: true);
     }
   }
 
-  Future _processEntity(String path, {bool warnAboutNonDartFile: false}) async {
+  Future _processEntity(String path,
+      {bool warnAboutNonDartFile = false}) async {
     final type = await FileSystemEntity.type(path);
     switch (type) {
-      case FileSystemEntityType.DIRECTORY:
+      case FileSystemEntityType.directory:
         return _processDirectory(path);
-      case FileSystemEntityType.FILE:
+      case FileSystemEntityType.file:
         if (_validExt.hasMatch(path)) return _processFile(path);
     }
     if (warnAboutNonDartFile) {
       final kind =
-          type == FileSystemEntityType.NOT_FOUND ? 'existent' : 'Dart/Markdown';
+          type == FileSystemEntityType.notFound ? 'existent' : 'Dart/Markdown';
       stderr.writeln('Warning: skipping non-$kind file "$path" ($type)');
     }
   }
@@ -163,7 +170,7 @@ class UpdaterCLI {
   Future _processDirectory(String dirPath) async {
     log.fine('_processDirectory: $dirPath');
     if (_exclude(dirPath)) return;
-    final dir = new Directory(dirPath);
+    final dir = Directory(dirPath);
     final entityList = dir.list(); // recursive: true, followLinks: false
     await for (FileSystemEntity fse in entityList) {
       final path = fse.path;
@@ -190,7 +197,7 @@ class UpdaterCLI {
   bool _exclude(String path) => excludePathRegExp.any((e) => path.contains(e));
 
   Future _updateFile(String filePath) async {
-    final updater = new Updater(
+    final updater = Updater(
       fragmentDirPath,
       srcDirPath,
       defaultIndentation: indentation,
@@ -209,7 +216,7 @@ class UpdaterCLI {
     if (!inPlaceFlag) {
       print(result);
     } else if (updater.numUpdatedFrag > 0) {
-      await new File(filePath).writeAsString(result);
+      await File(filePath).writeAsString(result);
     }
   }
 
@@ -220,7 +227,7 @@ class UpdaterCLI {
     _printUsageAndExit(parser);
   }
 
-  void _printUsageAndExit(ArgParser parser, {String msg, int exitCode: 1}) {
+  void _printUsageAndExit(ArgParser parser, {String msg, int exitCode = 1}) {
     if (msg != null) print('\n$msg\n');
     print('Usage: $_commandName [OPTIONS] file_or_directory...\n');
     print(parser.usage);

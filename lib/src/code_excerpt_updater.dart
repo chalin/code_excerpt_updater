@@ -18,7 +18,7 @@ import 'instr_info.dart';
 import 'issue_reporter.dart';
 import 'logger.dart';
 
-Function _listEq = const ListEquality().equals;
+final _listEq = const ListEquality().equals;
 
 /// A simple line-based updater for markdown code-blocks. It processes given
 /// files line-by-line, looking for matches to [procInstrRE] contained within
@@ -29,10 +29,10 @@ Function _listEq = const ListEquality().equals;
 /// [fragmentDirPath] directory, and diff sources from [srcDirPath].
 class Updater {
   final RegExp codeBlockStartMarker =
-      new RegExp(r'^\s*(///?)?\s*(```|{%-?\s*\w+\s*(\w*)(\s+.*)?-?%})?');
-  final RegExp codeBlockEndMarker = new RegExp(r'^\s*(///?)?\s*(```)?');
+      RegExp(r'^\s*(///?)?\s*(```|{%-?\s*\w+\s*(\w*)(\s+.*)?-?%})?');
+  final RegExp codeBlockEndMarker = RegExp(r'^\s*(///?)?\s*(```)?');
   final RegExp codeBlockEndPrettifyMarker =
-      new RegExp(r'^\s*(///?)?\s*({%-?\s*end\w+\s*-?%})?');
+      RegExp(r'^\s*(///?)?\s*({%-?\s*end\w+\s*-?%})?');
 
   final String fragmentDirPath;
   final int defaultIndentation;
@@ -60,9 +60,9 @@ class Updater {
   /// [err] defaults to [stderr].
   Updater(
     this.fragmentDirPath,
-    srcDirPath, {
+    String srcDirPath, {
     this.defaultIndentation = 0,
-    excerptsYaml = false,
+    bool excerptsYaml = false,
     this.escapeNgInterpolation = true,
     this.globalReplaceExpr = '',
     this.globalPlasterTemplate,
@@ -70,10 +70,10 @@ class Updater {
     Level logLevel,
   }) {
     initLogger(logLevel);
-    _reporter = new IssueReporter(
-        new IssueContext(() => _filePath, () => lineNum), err);
-    _replace = new ReplaceCodeTransformer(_reporter);
-    _plaster = new PlasterCodeTransformer(excerptsYaml, _replace);
+    _reporter =
+        IssueReporter(IssueContext(() => _filePath, () => lineNum), err);
+    _replace = ReplaceCodeTransformer(_reporter);
+    _plaster = PlasterCodeTransformer(excerptsYaml, _replace);
 
     if (globalReplaceExpr.isNotEmpty) {
       _appGlobalCodeTransformer = _replace.codeTransformer(globalReplaceExpr);
@@ -81,16 +81,14 @@ class Updater {
         // Error details have already been reported, now throw.
         final msg =
             'Command line replace expression is invalid: $globalReplaceExpr';
-        throw new Exception(msg);
+        throw Exception(msg);
       }
     }
-    _argProcessor = new ArgProcessor(_reporter);
+    _argProcessor = ArgProcessor(_reporter);
     _getter =
-        new ExcerptGetter(excerptsYaml, fragmentDirPath, srcDirPath, _reporter);
-    _differ = new Differ(
-        (path, region) => _getter.getExcerpt(path, region, null),
-        log,
-        _reporter.error);
+        ExcerptGetter(excerptsYaml, fragmentDirPath, srcDirPath, _reporter);
+    _differ = Differ((path, region) => _getter.getExcerpt(path, region, null),
+        log, _reporter.error);
   }
 
   int get numErrors => _reporter.numErrors;
@@ -108,7 +106,7 @@ class Updater {
   /// If [path] cannot be read then an exception is thrown.
   String generateUpdatedFile(String path) {
     _filePath = path == null || path.isEmpty ? 'unnamed-file' : path;
-    return _updateSrc(new File(path).readAsStringSync());
+    return _updateSrc(File(path).readAsStringSync());
   }
 
   String _updateSrc(String dartSource) {
@@ -119,11 +117,11 @@ class Updater {
   }
 
   /// Regex matching code-excerpt processing instructions
-  final RegExp procInstrRE = new RegExp(
+  final RegExp procInstrRE = RegExp(
       r'^(\s*((?:///?|-|\*)\s*)?)?<\?code-excerpt\s*("([^"]+)")?((\s+[-\w]+(\s*=\s*"[^"]*")?\s*)*)\??>');
 
   String _processLines() {
-    final List<String> output = [];
+    final output = [];
     while (_lines.isNotEmpty) {
       final line = _lines.removeAt(0);
       output.add(line);
@@ -167,7 +165,7 @@ class Updater {
     } else if (info.args.containsKey('plaster')) {
       filePlasterTemplate = info.args['plaster'];
       _checkForMoreThan1ArgErr();
-    } else if (info.args.keys.length == 0 ||
+    } else if (info.args.keys.isEmpty ||
         info.args.keys.length == 1 && info.args['class'] != null) {
       // Ignore empty instruction, other tools process them.
     } else if (info.args.keys.length == 1 && info.args.containsKey('title')) {
@@ -225,7 +223,7 @@ class Updater {
       if (match == null) {
         _reporter.error('unterminated markdown code block '
             'for <?code-excerpt "$infoPath"?>');
-        return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
+        return <String>[openingCodeBlockLine, ...currentCodeBlock];
       } else if (match[2] != null) {
         // We've found the closing code-block marker.
         closingCodeBlockLine = line;
@@ -238,7 +236,7 @@ class Updater {
     if (closingCodeBlockLine == null) {
       _reporter.error('unterminated markdown code block '
           'for <?code-excerpt "$infoPath"?>');
-      return <String>[openingCodeBlockLine]..addAll(currentCodeBlock);
+      return <String>[openingCodeBlockLine, ...currentCodeBlock];
     }
     _numSrcDirectives++;
     final linePrefix = info.linePrefix;
@@ -247,16 +245,18 @@ class Updater {
     final indentation = ' ' * indentBy;
     final prefixedCodeExcerpt = newCodeBlockCode.map((line) {
       final _line =
-          '$linePrefix$indentation$line'.replaceFirst(new RegExp(r'\s+$'), '');
-      return this.escapeNgInterpolation
-          ? _line.replaceAllMapped(new RegExp(r'({){|(})}'),
-              (m) => '${m[1] ?? m[2]}!${m[1] ?? m[2]}')
+          '$linePrefix$indentation$line'.replaceFirst(RegExp(r'\s+$'), '');
+      return escapeNgInterpolation
+          ? _line.replaceAllMapped(
+              RegExp(r'({){|(})}'), (m) => '${m[1] ?? m[2]}!${m[1] ?? m[2]}')
           : _line;
     }).toList();
     if (!_listEq(currentCodeBlock, prefixedCodeExcerpt)) _numUpdatedFrag++;
-    final result = <String>[openingCodeBlockLine]
-      ..addAll(prefixedCodeExcerpt)
-      ..add(closingCodeBlockLine);
+    final result = <String>[
+      openingCodeBlockLine,
+      ...prefixedCodeExcerpt,
+      closingCodeBlockLine
+    ];
     log.finer('>>> result: $result');
     return result;
   }
@@ -300,7 +300,7 @@ class Updater {
 
   int _getIndentBy(String indentByAsString) {
     if (indentByAsString == null) return defaultIndentation;
-    String errorMsg = '';
+    var errorMsg = '';
     var result = 0;
     try {
       result = int.parse(indentByAsString);
@@ -317,7 +317,7 @@ class Updater {
     return result;
   }
 
-  final RegExp _codeBlockLangSpec = new RegExp(r'(?:```|prettify\s+)(\w+)');
+  final RegExp _codeBlockLangSpec = RegExp(r'(?:```|prettify\s+)(\w+)');
 
   String _codeLang(String openingCodeBlockLine, String path) {
     final match = _codeBlockLangSpec.firstMatch(openingCodeBlockLine);

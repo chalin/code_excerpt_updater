@@ -8,7 +8,7 @@ import 'package:code_excerpt_updater/code_excerpt_updater_cli.dart';
 
 /// See [UpdaterCLI].
 Future<Null> main(List<String> args) async {
-  final updater = new UpdaterCLI();
+  final updater = UpdaterCLI();
   updater.setArgs(args);
   if (!updater.argsAreValid) return;
   await updater.processArgs();

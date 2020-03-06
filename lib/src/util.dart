@@ -1,5 +1,3 @@
-import 'package:logging/logging.dart';
-
 import 'constants.dart';
 import 'dart:math';
 
@@ -16,8 +14,8 @@ int toInt(String s, {int radix = 10, int errorValue}) {
 
 //-----------------------------------------------------------------------------
 
-final _blankLineRegEx = new RegExp(r'^\s*$');
-final _leadingWhitespaceRegEx = new RegExp(r'^[ \t]*');
+final _blankLineRegEx = RegExp(r'^\s*$');
+final _leadingWhitespaceRegEx = RegExp(r'^[ \t]*');
 
 Iterable<String> trimMinLeadingSpace(List<String> lines) {
   final nonblankLines = lines.where((s) => !_blankLineRegEx.hasMatch(s));
@@ -36,10 +34,10 @@ Iterable<String> trimMinLeadingSpace(List<String> lines) {
 //-----------------------------------------------------------------------------
 // TODO: consider writing the following conversions as a string transformer.
 
-final escapedSlashRE = new RegExp(r'\\/');
+final escapedSlashRE = RegExp(r'\\/');
 
-final _slashHexCharRE = new RegExp(r'\\x(..)');
-final _slashLetterRE = new RegExp(r'\\([\\nt])');
+final _slashHexCharRE = RegExp(r'\\x(..)');
+final _slashLetterRE = RegExp(r'\\([\\nt])');
 
 /// Encode special characters: '\t', `\n`, and `\xHH` where `HH` are hex digits.
 String encodeSlashChar(String s) {
@@ -54,7 +52,7 @@ String encodeSlashChar(String s) {
 
 String _hexToChar(String hexDigits, {String errorValue}) {
   final charCode = toInt(hexDigits, radix: 16);
-  return charCode == null ? errorValue : new String.fromCharCode(charCode);
+  return charCode == null ? errorValue : String.fromCharCode(charCode);
 }
 
 //

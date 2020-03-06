@@ -25,8 +25,8 @@ class IssueReporter {
 class IssueContext {
   IssueContext(this._filePath, this._lineNum);
 
-  String Function() _filePath;
-  int Function() _lineNum;
+  final String Function() _filePath;
+  final int Function() _lineNum;
 
   String get filePath => _filePath();
   int get lineNum => _lineNum();

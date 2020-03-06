@@ -16,7 +16,7 @@ const _testDir = 'test_data';
 Updater updater;
 Stdout _stderr;
 
-String _readFile(String path) => new File(path).readAsStringSync();
+String _readFile(String path) => File(path).readAsStringSync();
 
 String _srcFileName2Path(String fileName) => p.join(_testDir, 'src', fileName);
 String _expectedFn2Path(String relPath) =>
@@ -69,7 +69,7 @@ void _stdFileTest(String testFilePath) {
       expect(updater.numWarnings, isWarning ? 1 : 0);
     }
 
-    final expectedDoc = new File(_expectedFn2Path(testFilePath)).existsSync()
+    final expectedDoc = File(_expectedFn2Path(testFilePath)).existsSync()
         ? getExpected(testFilePath)
         : getSrc(testFilePath);
     expect(updatedDocs, expectedDoc);
@@ -88,7 +88,7 @@ void main() {
 
   test('Replace command line option: invalid expression', () {
     try {
-      new Updater(p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
+      Updater(p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
           globalReplaceExpr: 'invalidReplaceExpr', err: _stderr);
     } catch (e) {
       expect(
@@ -108,7 +108,7 @@ void testReplaceCmdLineOption() {
 
   setUp(() {
     clearInteractions(_stderr);
-    updater = new Updater(p.join(_testDir, 'frag'), '',
+    updater = Updater(p.join(_testDir, 'frag'), '',
         globalReplaceExpr: replaceExpr, err: _stderr);
   });
 
@@ -117,9 +117,8 @@ void testReplaceCmdLineOption() {
 
 void testsFromDefaultDir() {
   setUp(() {
-    _stderr = new MockStderr();
-    updater = new Updater(
-        p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
+    _stderr = MockStderr();
+    updater = Updater(p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
         err: _stderr);
   });
 
@@ -158,7 +157,7 @@ void testsFromDefaultDir() {
       'list.md',
       'no_comment_prefix.md',
       'prettify.md',
-      "remove.md",
+      'remove.md',
       'retain.md',
     ];
 
@@ -179,8 +178,7 @@ void testsFromDefaultDir() {
 
 void testSetPath() {
   setUp(() {
-    updater =
-        new Updater(p.join(_testDir, ''), p.join(_testDir, ''), err: _stderr);
+    updater = Updater(p.join(_testDir, ''), p.join(_testDir, ''), err: _stderr);
   });
 
   _stdFileTest('set_path.md');
@@ -188,8 +186,7 @@ void testSetPath() {
 
 void testDefaultIndentation() {
   setUp(() {
-    updater = new Updater(
-        p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
+    updater = Updater(p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
         defaultIndentation: 2, err: _stderr);
   });
 
@@ -200,8 +197,7 @@ void testDefaultIndentation() {
 
 void testNoEscapeNgInterpolation() {
   setUp(() {
-    updater = new Updater(
-        p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
+    updater = Updater(p.join(_testDir, 'frag'), p.join(_testDir, 'diff_src'),
         escapeNgInterpolation: false);
   });
 
@@ -211,7 +207,7 @@ void testNoEscapeNgInterpolation() {
 void testSrcButNoFrag() {
   setUp(() {
     updater =
-        new Updater(p.join(_testDir, 'fragDNE'), p.join(_testDir, 'diff_src'));
+        Updater(p.join(_testDir, 'fragDNE'), p.join(_testDir, 'diff_src'));
   });
 
   _stdFileTest('src_but_no_frag.md');
@@ -220,7 +216,7 @@ void testSrcButNoFrag() {
 void testExcerptYaml() {
   group('defaults:', () {
     setUp(() {
-      updater = new Updater(
+      updater = Updater(
         p.join(_testDir, 'excerpt_yaml'),
         p.join(_testDir, 'excerpt_yaml'),
         excerptsYaml: true,
@@ -237,7 +233,7 @@ void testExcerptYaml() {
 
   group('globally change default plaster', () {
     setUp(() {
-      updater = new Updater(
+      updater = Updater(
         p.join(_testDir, 'excerpt_yaml'),
         p.join(_testDir, 'excerpt_yaml'),
         excerptsYaml: true,

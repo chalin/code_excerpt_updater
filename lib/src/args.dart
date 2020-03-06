@@ -9,7 +9,7 @@ class ArgProcessor {
   final IssueReporter _reporter;
 
   InstrInfo extractAndNormalizeArgs(Match procInstrMatch) {
-    final info = new InstrInfo(procInstrMatch[0]);
+    final info = InstrInfo(procInstrMatch[0]);
     log.finer(
         '>>> pIMatch: ${procInstrMatch.groupCount} - [${info.instruction}]');
     var i = 1;
@@ -28,13 +28,13 @@ class ArgProcessor {
     return info;
   }
 
-  RegExp supportedArgs = new RegExp(
+  RegExp supportedArgs = RegExp(
       r'^(class|diff-with|diff-u|from|indent-by|path-base|plaster|region|replace|remove|retain|skip|take|title|to)$');
-  RegExp argRegExp = new RegExp(r'^([-\w]+)\s*(=\s*"(.*?)"\s*|\b)\s*');
+  RegExp argRegExp = RegExp(r'^([-\w]+)\s*(=\s*"(.*?)"\s*|\b)\s*');
 
   void _extractAndNormalizeNamedArgs(InstrInfo info, String argsAsString) {
     if (argsAsString == null) return;
-    String restOfArgs = argsAsString.trim();
+    var restOfArgs = argsAsString.trim();
     log.fine('>> __extractAndNormalizeNamedArgs: [$restOfArgs]');
     while (restOfArgs.isNotEmpty) {
       final match = argRegExp.firstMatch(restOfArgs);
@@ -55,22 +55,22 @@ class ArgProcessor {
     _validateArgs(info.args);
   }
 
-  final RegExp pathBraces = new RegExp(r'^(.*?)\{(.*?),(.*?)\}(.*?)$');
+  final RegExp pathBraces = RegExp(r'^(.*?)\{(.*?),(.*?)\}(.*?)$');
 
   void _expandDiffPathBraces(InstrInfo info) {
     final match = pathBraces.firstMatch(info.path);
     if (match == null) return;
     if (info.args['diff-with'] != null) {
       final msg = "You can't use both the brace syntax and the diff-with "
-          "argument; choose one or the other.";
+          'argument; choose one or the other.';
       _reporter.error(msg);
     }
     info.path = match[1] + match[2] + match[4];
     info.args['diff-with'] = match[1] + match[3] + match[4];
   }
 
-  final RegExp regionInPath = new RegExp(r'\s*\((.+)\)\s*$');
-  final RegExp nonWordChars = new RegExp(r'[^\w]+');
+  final RegExp regionInPath = RegExp(r'\s*\((.+)\)\s*$');
+  final RegExp nonWordChars = RegExp(r'[^\w]+');
 
   void _processPathAndRegionArgs(InstrInfo info) {
     final path = info.unnamedArg;
@@ -91,7 +91,7 @@ class ArgProcessor {
     _isNullOr(args['take'], _isInt);
   }
 
-  final isNumericRegExp = new RegExp(r'^[-+]?\d+$');
+  final isNumericRegExp = RegExp(r'^[-+]?\d+$');
   bool _isInt(String value) => isNumericRegExp.hasMatch(value);
   bool _isNullOr(String value, Predicate<String> test) =>
       value == null || test(value);

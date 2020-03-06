@@ -78,7 +78,7 @@ CodeTransformer toCodeTransformer(String arg) {
 }
 
 /// Patch: 1.24.3 doesn't have Iterable.indexWhere(). Drop this once we drop 1.x
-int _indexWhere(List<String> list, bool test(String s)) {
+int _indexWhere(List<String> list, bool Function(String s) test) {
   for (var i = 0; i < list.length; i++) {
     if (test(list[i])) return i;
   }

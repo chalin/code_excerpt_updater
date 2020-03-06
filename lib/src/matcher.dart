@@ -2,7 +2,7 @@ import 'package:logging/logging.dart';
 
 import 'nullable.dart';
 
-final Logger _log = new Logger('CEU.CT');
+final Logger _log = Logger('CEU.CT');
 
 typedef Matcher = bool Function(String t);
 // typedef Predicate<T> = bool Function(T t);
@@ -14,7 +14,7 @@ Matcher patternArgToMatcher(String arg, [String cmd = '']) {
   if (arg == null) return null;
   Matcher matcher;
   if (arg.startsWith('/') && arg.endsWith('/')) {
-    final re = new RegExp(arg.substring(1, arg.length - 1));
+    final re = RegExp(arg.substring(1, arg.length - 1));
     _log.finest(' >> $cmd arg: "$arg" used as regexp $re');
     matcher = (s) => re.hasMatch(s);
   } else {
