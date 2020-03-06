@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:code_excerpt_updater/src/code_excerpt_updater.dart';
+import 'package:code_excerpt_updater/src/nullable.dart';
 import 'package:logging/logging.dart';
 
 import 'src/logger.dart';
@@ -77,7 +78,9 @@ class UpdaterCLI {
   List<RegExp> excludePathRegExp;
   bool excerptsYaml;
   bool failOnRefresh;
-  String fragmentDirPath, plasterTemplate, replaceExpr, srcDirPath;
+  String fragmentDirPath, replaceExpr, srcDirPath;
+  @nullable
+  String plasterTemplate;
   bool inPlaceFlag;
   int indentation;
   List<String> pathsToFileOrDir = [];
@@ -128,7 +131,9 @@ class UpdaterCLI {
     failOnRefresh = flag(_failOnRefresh);
     fragmentDirPath = str(_fragmentDirPathFlagName);
     inPlaceFlag = flag(_inPlaceFlagName);
-    plasterTemplate = str(_plasterFlagName);
+    plasterTemplate = args[_plasterFlagName] == null
+        ? null
+        : args[_plasterFlagName] as String;
     replaceExpr = str(_replaceName);
     srcDirPath = str(_srcDirPathFlagName);
 
