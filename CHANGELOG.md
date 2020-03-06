@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Bug fix: reintroduce support for empty plaster string argument.
+
 ## 1.0.0
 
 - First Dart-2-only release. No code changes.
