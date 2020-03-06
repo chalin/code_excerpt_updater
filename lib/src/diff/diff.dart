@@ -3,10 +3,10 @@ import 'hunk.dart';
 
 /// Representation of a unified diff
 class Diff {
-  String _rawText;
+  final String _rawText;
   bool _parsed = false;
 
-  final List<String> fileInfo = new List(2);
+  final List<String> fileInfo = List(2);
   List<Hunk> hunks;
 
   Diff(this._rawText);
@@ -73,8 +73,10 @@ class Diff {
       if (!lines[i].startsWith('@@')) throw _invalidHunk(i);
       var start = i++;
       // Look for the start of the next hunk or the end of the diff
-      while (i < lines.length && !lines[i].startsWith('@@')) i++;
-      hunks.add(new Hunk(lines.skip(start).take(i - start).join(eol)));
+      while (i < lines.length && !lines[i].startsWith('@@')) {
+        i++;
+      }
+      hunks.add(Hunk(lines.skip(start).take(i - start).join(eol)));
     }
   }
 
@@ -86,5 +88,5 @@ class Diff {
           : '${fileInfo.join(eol)}\n${hunks.join(eol)}';
 
   Exception _invalidHunk(int lineNum) =>
-      new Exception('Invalid hunk syntax. Expected "@@" at line $lineNum.');
+      Exception('Invalid hunk syntax. Expected "@@" at line $lineNum.');
 }

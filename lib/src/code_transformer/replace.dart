@@ -9,17 +9,19 @@ import '../util.dart';
 class ReplaceCodeTransformer {
   ReplaceCodeTransformer(this._reporter);
 
-  IssueReporter _reporter;
+  final IssueReporter _reporter;
 
-  final _matchDollarNumRE = new RegExp(r'(\$+)(&|\d*)');
-  final _endRE = new RegExp(r'^g;?\s*$');
+  final _matchDollarNumRE = RegExp(r'(\$+)(&|\d*)');
+  final _endRE = RegExp(r'^g;?\s*$');
 
   @nullable
   CodeTransformer codeTransformer(String replaceExp) {
-    dynamic _reportErr([String extraInfo = '']) =>
-        _reporter.error('invalid replace attribute ("$replaceExp"); ' +
-            (extraInfo.isEmpty ? '' : '$extraInfo; ') +
-            'supported syntax is 1 or more semi-colon-separated: /regexp/replacement/g');
+    Null _reportErr([String extraInfo = '']) {
+      _reporter.error('invalid replace attribute ("$replaceExp"); ' +
+          (extraInfo.isEmpty ? '' : '$extraInfo; ') +
+          'supported syntax is 1 or more semi-colon-separated: /regexp/replacement/g');
+      return null;
+    }
 
     if (replaceExp == null) return null;
     final replaceExpParts = replaceExp
@@ -33,14 +35,14 @@ class ReplaceCodeTransformer {
 
     final start = replaceExpParts[0];
     final len = replaceExpParts.length;
-    if (len < 4 || len % 3 != 1)
+    if (len < 4 || len % 3 != 1) {
       return _reportErr('argument has missing parts ($len)');
-
-    if (start != '')
+    }
+    if (start != '') {
       return _reportErr('argument should start with "/", not  "$start"');
-
+    }
     final transformers = <CodeTransformer>[];
-    for (int i = 1; i < replaceExpParts.length; i += 3) {
+    for (var i = 1; i < replaceExpParts.length; i += 3) {
       final re = replaceExpParts[i];
       final replacement = replaceExpParts[i + 1];
       final end = replaceExpParts[i + 2];
@@ -61,11 +63,12 @@ class ReplaceCodeTransformer {
     final replacement = encodeSlashChar(_replacement);
     log.finest(' >> replacement expr: $replacement');
 
-    if (!_matchDollarNumRE.hasMatch(replacement))
-      return (String code) => code.replaceAll(new RegExp(re), replacement);
+    if (!_matchDollarNumRE.hasMatch(replacement)) {
+      return (String code) => code.replaceAll(RegExp(re), replacement);
+    }
 
     return (String code) => code.replaceAllMapped(
-        new RegExp(re),
+        RegExp(re),
         (Match m) => replacement.replaceAllMapped(_matchDollarNumRE, (_m) {
               // In JS, $$ becomes $ in a replacement string.
               final numDollarChar = _m[1].length;
@@ -73,8 +76,9 @@ class ReplaceCodeTransformer {
               final dollars = r'$' * (numDollarChar ~/ 2);
 
               // Even number of $'s, e.g. $$1?
-              if (numDollarChar.isEven || _m[2].isEmpty)
+              if (numDollarChar.isEven || _m[2].isEmpty) {
                 return '$dollars${_m[2]}';
+              }
 
               if (_m[2] == '&') return '$dollars${m[0]}';
 

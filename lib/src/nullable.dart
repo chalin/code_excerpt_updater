@@ -1,4 +1,4 @@
-const nullable = const Nullable();
+const nullable = Nullable();
 
 class Nullable {
   const Nullable();

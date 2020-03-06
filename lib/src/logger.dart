@@ -1,6 +1,6 @@
 import 'package:logging/logging.dart';
 
-final Logger log = new Logger('CEU');
+final Logger log = Logger('CEU');
 
 bool _loggerInitialized = false;
 

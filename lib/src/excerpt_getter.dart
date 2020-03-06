@@ -27,13 +27,15 @@ class ExcerptGetter {
       String relativePath,
       String region,
       CodeTransformer t) {
-    String excerpt = _getExcerptAsString(relativePath, region);
+    var excerpt = _getExcerptAsString(relativePath, region);
     if (excerpt == null) return null; // Errors have been reported
     log.fine('>> excerpt before xform: "$excerpt"');
     if (t != null) excerpt = t(excerpt);
     final result = excerpt.split(eol);
     // All excerpts are [eol] terminated, so drop trailing blank lines
-    while (result.length > 0 && result.last == '') result.removeLast();
+    while (result.isNotEmpty && result.last == '') {
+      result.removeLast();
+    }
     return trimMinLeadingSpace(result);
   }
 
@@ -52,8 +54,8 @@ class ExcerptGetter {
         p.join(fragmentDirPath, pathBase, relativePath + ext);
     YamlMap excerptsYaml;
     try {
-      final contents = new File(excerptYamlPath).readAsStringSync();
-      excerptsYaml = loadYaml(contents, sourceUrl: excerptYamlPath);
+      final contents = File(excerptYamlPath).readAsStringSync();
+      excerptsYaml = loadYaml(contents, sourceUrl: excerptYamlPath) as YamlMap;
     } on FileSystemException {
       // Fall through
     }
@@ -66,13 +68,13 @@ class ExcerptGetter {
       _reporter.error('there is no "$region" region in "$excerptYamlPath"');
       return null;
     } else {
-      return excerptsYaml[region].trimRight();
+      return (excerptsYaml[region] as String).trimRight();
     }
 
     // ...
     final filePath = p.join(fragmentDirPath, pathBase, relativePath);
     try {
-      return new File(filePath).readAsStringSync();
+      return File(filePath).readAsStringSync();
     } on FileSystemException {
       _reporter.error('excerpt not found for "$relativePath"');
       return null;
@@ -91,9 +93,9 @@ class ExcerptGetter {
     }
 
     // First look for a matching fragment
-    final String fragPath = p.join(fragmentDirPath, pathBase, file);
+    final fragPath = p.join(fragmentDirPath, pathBase, file);
     try {
-      return new File(fragPath).readAsStringSync();
+      return File(fragPath).readAsStringSync();
     } on FileSystemException {
       if (region != '') {
         _reporter.error('cannot read fragment file "$fragPath"');
@@ -103,9 +105,9 @@ class ExcerptGetter {
     }
 
     // No fragment file file. Look for a source file with a matching file name.
-    final String srcFilePath = p.join(srcDirPath, pathBase, relativePath);
+    final srcFilePath = p.join(srcDirPath, pathBase, relativePath);
     try {
-      return new File(srcFilePath).readAsStringSync();
+      return File(srcFilePath).readAsStringSync();
     } on FileSystemException {
       _reporter.error('cannot find a source file "$srcFilePath", '
           'nor fragment file "$fragPath"');

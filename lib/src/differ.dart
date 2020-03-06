@@ -15,7 +15,7 @@ typedef ExcerptFetcher = Iterable<String> Function(String path, String region);
 class Differ {
   Differ(this._excerptFetcher, this._log, this._reportError);
 
-  final docregionRe = new RegExp(r'#(end)?doc(plaster|region)\b');
+  final docregionRe = RegExp(r'#(end)?doc(plaster|region)\b');
   final ExcerptFetcher _excerptFetcher;
   final ErrorReporter _reportError;
   final Logger _log;
@@ -48,10 +48,10 @@ class Differ {
     }
 
     if (r.exitCode > 1) {
-      _reportError(r.stderr);
+      _reportError(r.stderr as String);
       return null;
     }
-    if (r.stdout.isEmpty) return []; // no differences between files
+    if ((r.stdout as String).isEmpty) return []; // no differences between files
 
     /* Sample diff output:
     --- examples/acx/lottery/1-base/lib/lottery_simulator.html	2017-08-25 07:45:24.000000000 -0400
@@ -69,11 +69,11 @@ class Differ {
     ...
     */
 
-    String diffText = r.stdout.trim();
+    var diffText = (r.stdout as String).trim();
     final from = patternArgToMatcher(args['from']);
     final to = patternArgToMatcher(args['to']);
     if (from != null || to != null) {
-      final diff = new Diff(diffText);
+      final diff = Diff(diffText);
       if (diff.keepLines(from: from, to: to)) diffText = diff.toString();
     }
     final result = diffText.split(eol);
@@ -95,7 +95,7 @@ class Differ {
   ///
   /// Lets [FileSystemException]s through.
   File filteredFile(String filePath) {
-    final file = new File(filePath);
+    final file = File(filePath);
     final src = file.readAsStringSync();
     final lines = src.split(eol);
     lines.removeWhere((line) => docregionRe.hasMatch(line));
@@ -125,18 +125,18 @@ class Differ {
     final ext = p.extension(filePath);
     final tmpFilePath =
         p.join(getTmpDir().path, 'differ_src_${filePath.hashCode}$ext');
-    final tmpFile = new File(tmpFilePath);
+    final tmpFile = File(tmpFilePath);
     tmpFile.writeAsStringSync(content);
     return tmpFile;
   }
 
-  int _indexOfFirstMatch(List a, int startingIdx, RegExp re) {
-    var i = startingIdx;
-    while (i < a.length && !re.hasMatch(a[i])) i++;
-    return i;
-  }
+  //  int _indexOfFirstMatch(List a, int startingIdx, RegExp re) {
+  //    var i = startingIdx;
+  //    while (i < a.length && !re.hasMatch(a[i])) i++;
+  //    return i;
+  //  }
 
-  final _diffFileIdRegEx = new RegExp(r'^(---|\+\+\+) ([^\t]+)\t(.*)$');
+  final _diffFileIdRegEx = RegExp(r'^(---|\+\+\+) ([^\t]+)\t(.*)$');
 
   String _adjustDiffFileIdLine(String relativePath, String diffFileIdLine) {
     final line = diffFileIdLine;

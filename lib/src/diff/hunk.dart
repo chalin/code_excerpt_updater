@@ -19,9 +19,9 @@ const eol = '\n';
 ///            title: 'Welcome to Flutter',
 ///            home: Scaffold(
 class Hunk {
-  static final Hunk empty = new Hunk('');
+  static final Hunk empty = Hunk('');
 
-  final headRegExp = new RegExp(r'@@ -(\d+)(,(\d+))? \+(\d+)(,(\d+))? @@(.*)');
+  final headRegExp = RegExp(r'@@ -(\d+)(,(\d+))? \+(\d+)(,(\d+))? @@(.*)');
 
   String _rawText;
   bool _parsed = false;
@@ -67,7 +67,7 @@ class Hunk {
   }
 
   /// Drop lines (excluding the header), until a line if found
-  /// that matches [p]. The matching line is not dropped.
+  /// that matches [m]. The matching line is not dropped.
   /// @returns true iff a matching line was found.
   bool dropLinesUntil(Matcher m) {
     final indexOfMatch = _indexOfFirstMatch(_lines, m);
@@ -93,7 +93,7 @@ class Hunk {
     return true; // new Hunk('$head\n$rest');
   }
 
-  /// Look for a line (excluding the header), that matches [p].
+  /// Look for a line (excluding the header), that matches [m].
   /// All lines after the match are dropped.
   /// @returns true iff a matching line was found.
   bool dropLinesAfter(Matcher m) {
@@ -138,9 +138,11 @@ class Hunk {
     }
   }
 
-  int _indexOfFirstMatch(List a, Matcher m) {
+  int _indexOfFirstMatch(List<String> a, Matcher m) {
     var i = 0;
-    while (i < a.length && !m(a[i])) i++;
+    while (i < a.length && !m(a[i])) {
+      i++;
+    }
     return i;
   }
 }

@@ -1,7 +1,12 @@
 # Changelog
 
+## 1.0.0
+
+- First Dart-2-only release. No code changes.
+
 ## 0.19.2
 
+- Last Dart 1 compatible version.
 - Add `--log-fine` option.
 
 ## 0.19.1
