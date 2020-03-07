@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.1
+
+- Support YAML excerpt files with a specified excerpt border character as the
+  value of the `#border` map key. If present, all code excerpt lines will be
+  assumed to be prefixed withe the border character in the YAML file. The
+  app will strip out the border before updating docs with excerpt code.
+  
+  Here is a sample YAML excerpt file:
+  
+    ```yaml
+    '#border': '|'
+    'main': |+
+      |void main() => print('$greeting $scope');
+    ```
+
+  Note the leading `|` as the first character of the `main` code excerpt. 
+
+## 1.1.0 - unpublished
+
 ## 1.0.1
 
 - Bug fix: reintroduce support for empty plaster string argument.

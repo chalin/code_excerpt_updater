@@ -1,7 +1,7 @@
 import 'dart:io';
 
 class IssueReporter {
-  IssueReporter(this._ctx, Stdout err) : _stderr = err ?? stderr;
+  IssueReporter(this._ctx, [Stdout err]) : _stderr = err ?? stderr;
 
   final IssueContext _ctx;
   final Stdout _stderr;

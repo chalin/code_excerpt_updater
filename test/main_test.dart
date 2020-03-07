@@ -214,11 +214,13 @@ void testSrcButNoFrag() {
 }
 
 void testExcerptYaml() {
+  final fragAndSrcPath = p.join(_testDir, 'excerpt_yaml');
+
   group('defaults:', () {
     setUp(() {
       updater = Updater(
-        p.join(_testDir, 'excerpt_yaml'),
-        p.join(_testDir, 'excerpt_yaml'),
+        fragAndSrcPath,
+        fragAndSrcPath,
         excerptsYaml: true,
       );
     });
@@ -234,8 +236,8 @@ void testExcerptYaml() {
   group('globally change default plaster', () {
     setUp(() {
       updater = Updater(
-        p.join(_testDir, 'excerpt_yaml'),
-        p.join(_testDir, 'excerpt_yaml'),
+        fragAndSrcPath,
+        fragAndSrcPath,
         excerptsYaml: true,
         globalPlasterTemplate: r'// Insert your code here $defaultPlaster',
       );
