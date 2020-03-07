@@ -10,6 +10,9 @@ import 'logger.dart';
 import 'nullable.dart';
 import 'util.dart';
 
+const _defaultYamlExcerptLeftBorderChar = ''; // I.e., no char by default
+const _yamlExcerptLeftBorderCharKey = '#border';
+
 class ExcerptGetter {
   ExcerptGetter(
       this.excerptsYaml, this.fragmentDirPath, this.srcDirPath, this._reporter);
@@ -19,25 +22,37 @@ class ExcerptGetter {
   final String srcDirPath;
   final IssueReporter _reporter;
 
-  String pathBase;
+  String pathBase = '';
+  String _yamlExcerptLeftBorderChar = _defaultYamlExcerptLeftBorderChar;
 
   @nullable
   Iterable<String> getExcerpt(
       // String pathBase,
       String relativePath,
       String region,
-      CodeTransformer t) {
+      [CodeTransformer t]) {
+    _yamlExcerptLeftBorderChar = _defaultYamlExcerptLeftBorderChar;
     var excerpt = _getExcerptAsString(relativePath, region);
     if (excerpt == null) return null; // Errors have been reported
     log.fine('>> excerpt before xform: "$excerpt"');
-    if (t != null) excerpt = t(excerpt);
-    final result = excerpt.split(eol);
-    // All excerpts are [eol] terminated, so drop trailing blank lines
-    while (result.isNotEmpty && result.last == '') {
-      result.removeLast();
+    if (_yamlExcerptLeftBorderChar.isNotEmpty) {
+      excerpt = _removeLineBorderPrefix(_yamlExcerptLeftBorderChar, excerpt);
     }
-    return trimMinLeadingSpace(result);
+    if (t != null) excerpt = t(excerpt);
+    final lines = excerpt.split(eol);
+    // All excerpts are [eol] terminated, so drop trailing blank lines
+    while (lines.isNotEmpty && lines.last == '') {
+      lines.removeLast();
+    }
+    return trimMinLeadingSpace(lines);
   }
+
+  String _removeLineBorderPrefix(String borderChar, String excerpt) => excerpt
+      .split(eol)
+      .map((line) => line.startsWith(_yamlExcerptLeftBorderChar)
+          ? line.substring(1)
+          : line)
+      .join(eol);
 
   /// Look for a fragment file under [fragmentDirPath], failing that look for a
   /// source file under [srcDirPath]. If a file is found return its content as
@@ -47,6 +62,8 @@ class ExcerptGetter {
       ? _getExcerptAsStringFromYaml(relativePath, region)
       : _getExcerptAsStringLegacy(relativePath, region);
 
+  /// Potentially assigns to _yamlExcerptLeftBorderChar the
+  /// value of the YAML [_yamlExcerptLeftBorderCharKey] key.
   @nullable
   String _getExcerptAsStringFromYaml(String relativePath, String region) {
     final ext = '.excerpt.yaml';
@@ -56,6 +73,8 @@ class ExcerptGetter {
     try {
       final contents = File(excerptYamlPath).readAsStringSync();
       excerptsYaml = loadYaml(contents, sourceUrl: excerptYamlPath) as YamlMap;
+      _yamlExcerptLeftBorderChar =
+          (excerptsYaml[_yamlExcerptLeftBorderCharKey] ?? '') as String;
     } on FileSystemException {
       // Fall through
     }

@@ -87,8 +87,8 @@ class Updater {
     _argProcessor = ArgProcessor(_reporter);
     _getter =
         ExcerptGetter(excerptsYaml, fragmentDirPath, srcDirPath, _reporter);
-    _differ = Differ((path, region) => _getter.getExcerpt(path, region, null),
-        log, _reporter.error);
+    _differ = Differ((path, region) => _getter.getExcerpt(path, region), log,
+        _reporter.error);
   }
 
   int get numErrors => _reporter.numErrors;

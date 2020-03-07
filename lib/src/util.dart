@@ -17,7 +17,7 @@ int toInt(String s, {int radix = 10, int errorValue}) {
 final _blankLineRegEx = RegExp(r'^\s*$');
 final _leadingWhitespaceRegEx = RegExp(r'^[ \t]*');
 
-Iterable<String> trimMinLeadingSpace(List<String> lines) {
+Iterable<String> trimMinLeadingSpace(Iterable<String> lines) {
   final nonblankLines = lines.where((s) => !_blankLineRegEx.hasMatch(s));
   // Length of leading spaces to be trimmed
   final lengths = nonblankLines.map((s) {
