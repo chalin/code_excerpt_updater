@@ -16,20 +16,23 @@ pub global activate --source git https://github.com/chalin/code_excerpt_updater.
 Usage: code_excerpt_updater [OPTIONS] file_or_directory...
 
     --exclude=<PATH_REGEXP,...>       Paths to exclude when processing a directory recursively.
-                                      Dot files and directorys are always excluded.
+                                      Dotfiles and directories are always excluded.
 
     --fail-on-refresh                 Report a non-zero exit code if a fragment is refreshed.
--p, --fragment-dir-path               PATH to directory containing code fragment files
+    
+-p, --fragment-dir-path               PATH to the directory containing code fragment files
                                       (defaults to "", that is, the current working directory).
 
 -h, --help                            Show command help.
--i, --indentation                     NUMBER. Default number of spaces to use as indentation for code inside code blocks.
+
+-i, --indentation                     NUMBER. The default number of spaces to use as indentation for code inside code blocks.
                                       (defaults to "0")
 
--q, --src-dir-path                    PATH to directory containing code used in diffs
+-q, --src-dir-path                    PATH to the directory containing code used in diffs
                                       (defaults to "", that is, the current working directory).
 
 -w, --write-in-place                  Write updates to files in-place.
+
     --[no-]escape-ng-interpolation    Escape Angular interpolation syntax {{...}} as {!{...}!}.
                                       (defaults to on)
 
@@ -37,7 +40,9 @@ Usage: code_excerpt_updater [OPTIONS] file_or_directory...
                                       For example, "// Insert your code here"; use "none" to remove plasters.
 
     --replace                         REPLACE-EXPRESSIONs. Global replace argument. See README for syntax.
+    
     --yaml                            Read excerpts from *.excerpt.yaml files.
+
 ```
 
 Returns a non-zero exit code errors occur during file processing, or if fragments were refreshed and 
@@ -64,10 +69,10 @@ Recognized arguments are:
 - `region`, a code fragment region name.
 - `replace="/regexp/replacement/g;..."` defines one or more semi-colon separated [regular expression][]/replacement
   expression pairs for use in a global search-and-replace applied to the code excerpt.
-  The replacement expression can contain capture group syntax `$&`, `$1`, `$2`, ... .
-- `remove="string|/regexp/"`: remove the lines, from the identified code excerpt file, which contain the given string
+  The replacement expression can contain capture group syntax `$&`, `$1`, `$2`,...
+- `remove=" string|/regexp/"`: remove the lines, from the identified code excerpt file, which contain the given string
    or match _regexp_. To match a string starting with a slash, escape it.
-- `retain="string|/regexp/"`: retain the lines, from the identified code excerpt file, which contain the given string
+- `retain=" string|/regexp/"`: retain the lines, from the identified code excerpt file, which contain the given string
    or match _regexp_. To match a string starting with a slash, escape it.
 - `indent-by` defines the number of spaces to be used to indent the code in the code block.
    (Default is no indentation.)
@@ -82,14 +87,14 @@ Recognized arguments are:
   _n_ lines otherwise.
 - `take="n"`: takes the first _n_ lines of the excerpt when _n_ is non-negative; takes the last
   _n_ lines otherwise.
-- `to="string|/regex/"`: skips the lines after the first line found matching the given pattern.
+- `to=" string|/regex/"`: skips the lines after the first line found matching the given pattern.
+
 
 Notes:
 - Arguments are processed in the order they appear. This is significant for arguments like
   `replace`, `remove`, etc.
-- The `<?code-excerpt?>` instruction can optionally be preceded by an single-line comment
-  token. Namely either `//` or `///`.
-- Path, and arguments if given, must be enclosed in double quotes.
+- The `<?code-excerpt?>` instruction can optionally be preceded by a single-line comment token. Namely either `//` or `///`.
+- Path, and arguments if given, must be enclosed in double-quotes.
 - It is a limitation of processing instructions that it cannot contain a `>` character.
   This limitation can be overcome in some situations: e.g., in a regexp, use `\x3E` as an encoding of `>`.
 - If both `retain` and `replace` arguments are provided, the `retain` filter is always applied first.
@@ -120,7 +125,7 @@ These are the optional arguments (usage is explained further below):
 When the code_excerpt_updater is run, it will update the content of the code
 block with the output of `diff -u path/filtered_file1.ext path2/filtered_file2.ext2` truncated at the first diff 
 output line that matches the `to` regular expression, where the `filtered_file*.ext*` represents the corresponding
-file `file*.ext*` but with docregion tags removed. When an optional region name is provided, then the named regions
+file `file*.ext*` but with doc region tags removed. When an optional region name is provided, then the named regions
 (the same in both files) are compared.
 
 If `diff-u="NUM"` is used, then the diff command is called with the `-U NUM` flag instead of `-u`.
@@ -129,7 +134,7 @@ If `diff-u="NUM"` is used, then the diff command is called with the `-U NUM` fla
 
 Use a set instruction to globally set a path base, or a replace expression (using the syntax described above).
 
-A global **replace** instructions applies to all subsequence code-excerpt instructions. To reset, use an
+A global **replace** instructions applies to all subsequent code-excerpt instructions. To reset, use an
 empty replace argument. If a code-excerpt instruction has a replace argument, the global replace
 is applied after the code-excerpt-specific replace.
 
@@ -143,7 +148,7 @@ Following this instruction, the paths to file fragments will be interpreted rela
 
 ### Limitations
 
-XML processing instructions cannot contain `>`. In particular this means that attribute values cannot contain `>`,
+XML processing instructions cannot contain `>`. In particular, this means that attribute values cannot have `>`,
 which is a limitation for the diff `from` and `to` regular expressions.
 
 ## 4. Code excerpt lookup and updating
